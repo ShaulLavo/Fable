@@ -1,7 +1,8 @@
 import { JSX } from 'solid-js'
 import { FSNode, isFolder } from '../../types/FS.types'
-import { ICONS } from '../../stores/icons'
-import { currentBackground } from '../../stores/themeStore'
+import { BASE_ICONS } from '../../stores/icons'
+import { secondaryBackground } from '../../stores/themeStore'
+import { Dynamic } from 'solid-js/web'
 
 export const Arrow = (props: {
 	node: FSNode
@@ -18,14 +19,14 @@ export const Arrow = (props: {
 			class="absolute top-1 cursor-pointer select-none  min-w-4"
 			onClick={props.onClick}
 			style={{
-				'background-color': currentBackground(),
+				'background-color': secondaryBackground(),
 				left: `-${props.fontSize + 4}px`
 			}}
 		>
 			{props.node.isOpen ? (
-				<ICONS.chevronDown size={props.fontSize} />
+				<Dynamic component={BASE_ICONS.chevronDown} size={props.fontSize} />
 			) : (
-				<ICONS.chevronRight size={props.fontSize} />
+				<Dynamic component={BASE_ICONS.chevronRight} size={props.fontSize} />
 			)}
 		</span>
 	)

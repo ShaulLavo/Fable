@@ -7,20 +7,20 @@ export const useCurrentFile = (
 	currentFile: Accessor<File | null>,
 	openFiles: Map<string, string>
 ) => {
-	const { currentExtension } = useFileExtension(currentFile)
-
+	const currentExtension = () => currentFile()?.path.split('.').pop()
 	const currentFileContent = createMemo(() => {
 		const file = currentFile()
 		if (!file) return ''
 		return openFiles.get(file.path) ?? ''
 	})
 
-	const setCurrentFileContent = async (content: string) => {
+	const setCurrentFileContent = async (content: string, format = false) => {
 		const file = currentFile()
 		if (!file) return
 		let code = content
-		if (currentExtension()) {
-			code = await formatter()(content, getConfigFromExt(currentExtension()))
+		if (format && currentExtension()) {
+			const c = await formatter()(content, getConfigFromExt(currentExtension()))
+			code = c.formatted
 		}
 		openFiles.set(file.path, code)
 	}

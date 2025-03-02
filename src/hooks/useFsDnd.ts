@@ -1,11 +1,10 @@
 import { dir } from 'opfs-tools'
-import { createSignal } from 'solid-js'
+import { batch, createSignal } from 'solid-js'
 import { useFS } from '../context/FsContext'
 import { getFolder, nodeChildOf } from '../service/FS.service'
 import { Folder, FSNode, isFolder } from '../types/FS.types'
 import { useDnD } from './useDnd'
 import { useOPFS } from './useOPFS'
-import { viewTransition, viewTransitionBatched } from '../utils/viewTransition'
 
 const [draggedNode, setDraggedNode] = createSignal<FSNode | null>(null)
 const [draggedOverNode, _setDraggedOverNode] = createSignal<FSNode | null>(null)
@@ -18,10 +17,12 @@ const setDraggedOverNode = (node: FSNode | null) => {
 export const useFsDnd = (node: FSNode) => {
 	const { moveNode, setIsOpen, addNode, fs } = useFS()
 	const { write } = useOPFS()
+
 	const handleFileEntry = async (
 		entry: FileSystemFileEntry,
 		toPath: string
 	) => {
+		console.log(entry, toPath)
 		entry.file(async file => {
 			const path = `${toPath}/${file.name}`
 			await write(path, file.stream())
@@ -48,6 +49,7 @@ export const useFsDnd = (node: FSNode) => {
 			name: entry.name,
 			children: []
 		})
+
 		await dir(path).create()
 		const reader = entry.createReader()
 
@@ -68,7 +70,7 @@ export const useFsDnd = (node: FSNode) => {
 		if (!folder) return
 		let parentPath = folder.path
 		const items = dt.items
-
+		console.log(items)
 		for (const item of items) {
 			const entry =
 				item.webkitGetAsEntry() || (await item.getAsFileSystemHandle())
@@ -77,7 +79,9 @@ export const useFsDnd = (node: FSNode) => {
 				if (!entry) return
 
 				if (entry instanceof FileSystemDirectoryHandle) {
+					console.error('HANDLE ME FileSystemDirectoryHandle')
 				} else if (entry instanceof FileSystemFileHandle) {
+					console.error('HANDLE ME FileSystemFileHandle')
 				} else {
 					if (entry.isDirectory) {
 						await handleDirectoryEntry(
@@ -117,12 +121,14 @@ export const useFsDnd = (node: FSNode) => {
 		onDrop(event) {
 			event.preventDefault()
 			const dt = event.dataTransfer
+			console.log('???')
+			console.log(dt)
 			if (!dt) return
 			const from = dt.getData('text/plain')
 			if (from) {
 				if (from === node.path) return
 				const to = node.path
-				viewTransitionBatched(() => {
+				batch(() => {
 					moveNode(from, to)
 					setDraggedOverNode(null!)
 					setDraggedNode(null!)

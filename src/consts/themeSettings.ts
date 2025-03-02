@@ -64,6 +64,27 @@ import {
 	xcodeLight
 } from '../themes/xcode'
 
+const themeCSSMap = {
+	xcodeLight: () => import('highlight.js/styles/xcode.min.css?raw'),
+	githubLight: () => import('highlight.js/styles/github.min.css?raw'),
+	githubDark: () => import('highlight.js/styles/github-dark.min.css?raw'),
+	tokyoNightDark: () => import('highlight.js/styles/tokyo-night-dark.css?raw'),
+	tokyoNightLight: () =>
+		import('highlight.js/styles/tokyo-night-light.css?raw'),
+	white: () => import('highlight.js/styles/isbl-editor-light.min.css?raw'),
+	black: () => import('highlight.js/styles/ir-black.min.css?raw'),
+	greyScale: () => import('highlight.js/styles/grayscale.min.css?raw'),
+	hybrid: () => import('highlight.js/styles/hybrid.min.css?raw'),
+	googleCode: () => import('highlight.js/styles/googlecode.min.css?raw'),
+	tokyoNightBright: () =>
+		import('highlight.js/styles/tomorrow-night-bright.min.css?raw'),
+	vs2015: () => import('highlight.js/styles/vs2015.min.css?raw'),
+	pandaSyntaxDark: () =>
+		import('highlight.js/styles/panda-syntax-dark.min.css?raw'),
+	nord: () => import('highlight.js/styles/nord.min.css?raw'),
+	felipec: () => import('highlight.js/styles/felipec.min.css?raw')
+}
+
 type ThemeSettingType = {
 	theme: Extension
 	background: string
@@ -73,6 +94,7 @@ type ThemeSettingType = {
 	color1: string
 	color2: string
 	rainbowBracket: Record<BracketColors, `#${string}`>
+	hljsCss: () => Promise<{ default: string }>
 }
 type BracketColors =
 	| 'red'
@@ -92,7 +114,8 @@ export const themeSettings = {
 		xTermTheme: xTermXcodeDarkTheme,
 		color1: '\x1b[38;2;255;129;112m',
 		color2: '\x1b[38;2;107;223;255m',
-		rainbowBracket: xCodeDarkBracketColors
+		rainbowBracket: xCodeDarkBracketColors,
+		hljsCss: themeCSSMap.vs2015
 	},
 	xcodeLight: {
 		theme: xcodeLight,
@@ -102,27 +125,30 @@ export const themeSettings = {
 		xTermTheme: xTermXcodeLightTheme,
 		color1: '\x1b[38;2;210;52;35m',
 		color2: '\x1b[38;2;3;47;98m',
-		rainbowBracket: xCodeLightBracketColors
+		rainbowBracket: xCodeLightBracketColors,
+		hljsCss: themeCSSMap.xcodeLight
 	},
 	white: {
 		theme: whiteLight,
-		background: 'white',
-		color: 'black',
+		background: '#ffffff',
+		color: '#000000',
 		mode: 'light',
 		xTermTheme: xTermWhiteLightTheme,
 		color1: '\x1b[38;2;4;49;250m',
 		color2: '\x1b[38;2;107;122;136m',
-		rainbowBracket: whiteLightBracketColors
+		rainbowBracket: whiteLightBracketColors,
+		hljsCss: themeCSSMap.white
 	},
 	black: {
 		theme: whiteDark,
-		background: 'black',
-		color: 'white',
+		background: '#000000',
+		color: '#ffffff',
 		mode: 'dark',
 		xTermTheme: xTermWhiteDarkTheme,
 		color1: '\x1b[38;2;187;154;247m',
 		color2: '\x1b[38;2;168;168;177m',
-		rainbowBracket: whiteDarkBracketColors
+		rainbowBracket: whiteDarkBracketColors,
+		hljsCss: themeCSSMap.black
 	},
 	duotoneDark: {
 		theme: duotoneDark,
@@ -132,7 +158,8 @@ export const themeSettings = {
 		xTermTheme: xTermDuotoneDarkTheme,
 		color1: '\x1b[38;2;250;173;92m',
 		color2: '\x1b[38;2;154;134;253m',
-		rainbowBracket: duotoneDarkBracketColors
+		rainbowBracket: duotoneDarkBracketColors,
+		hljsCss: themeCSSMap.hybrid
 	},
 	duotoneLight: {
 		theme: duotoneLight,
@@ -142,7 +169,8 @@ export const themeSettings = {
 		xTermTheme: xTermDuotoneLightTheme,
 		color1: '\x1b[38;2;6;50;137m',
 		color2: '\x1b[38;2;22;89;223m',
-		rainbowBracket: duotoneLightBracketColors
+		rainbowBracket: duotoneLightBracketColors,
+		hljsCss: themeCSSMap.hybrid
 	},
 	githubDark: {
 		theme: githubDark,
@@ -152,7 +180,8 @@ export const themeSettings = {
 		xTermTheme: xTermGithubDarkTheme,
 		color1: '\x1b[38;2;255;123;114m',
 		color2: '\x1b[38;2;121;192;255m',
-		rainbowBracket: githubDarkBracketColors
+		rainbowBracket: githubDarkBracketColors,
+		hljsCss: themeCSSMap.githubDark
 	},
 	githubLight: {
 		theme: githubLight,
@@ -162,7 +191,8 @@ export const themeSettings = {
 		xTermTheme: xTermGithubLightTheme,
 		color1: '\x1b[38;2;215;58;73m',
 		color2: '\x1b[38;2;0;92;197m',
-		rainbowBracket: githubLightBracketColors
+		rainbowBracket: githubLightBracketColors,
+		hljsCss: themeCSSMap.githubLight
 	},
 	tokyoNight: {
 		theme: tokyoNight,
@@ -172,7 +202,8 @@ export const themeSettings = {
 		xTermTheme: xTermTokyoNightTheme,
 		color1: '\x1b[38;2;255;83;112m',
 		color2: '\x1b[38;2;122;162;247m',
-		rainbowBracket: tokyoNightBracketColors
+		rainbowBracket: tokyoNightBracketColors,
+		hljsCss: themeCSSMap.tokyoNightDark
 	},
 	tokyoNightDay: {
 		theme: tokyoNightDay,
@@ -182,7 +213,8 @@ export const themeSettings = {
 		xTermTheme: xTermTokyoNightDayTheme,
 		color1: '\x1b[38;2;245;42;101m',
 		color2: '\x1b[38;2;55;96;191m',
-		rainbowBracket: tokyoNightDayBracketColors
+		rainbowBracket: tokyoNightDayBracketColors,
+		hljsCss: themeCSSMap.tokyoNightLight
 	},
 	tokyoNightStorm: {
 		theme: tokyoNightStorm,
@@ -192,7 +224,8 @@ export const themeSettings = {
 		xTermTheme: xTermTokyoNightStormTheme,
 		color1: '\x1b[38;2;255;83;112m',
 		color2: '\x1b[38;2;122;162;247m',
-		rainbowBracket: tokyoNightStormBracketColors
+		rainbowBracket: tokyoNightStormBracketColors,
+		hljsCss: themeCSSMap.tokyoNightBright
 	},
 	poimandres: {
 		theme: poimandres,
@@ -202,7 +235,8 @@ export const themeSettings = {
 		xTermTheme: xTermPoimandresTheme,
 		color1: '\x1b[38;2;208;103;157m',
 		color2: '\x1b[38;2;173;215;255m',
-		rainbowBracket: poimandresBracketColors
+		rainbowBracket: poimandresBracketColors,
+		hljsCss: themeCSSMap.pandaSyntaxDark
 	},
 	light: {
 		theme: light,
@@ -212,7 +246,8 @@ export const themeSettings = {
 		xTermTheme: xTermlightTheme,
 		color1: '\x1b[38;2;208;103;157m',
 		color2: '\x1b[38;2;173;215;253m',
-		rainbowBracket: lightBracketColors
+		rainbowBracket: lightBracketColors,
+		hljsCss: themeCSSMap.googleCode
 	},
 	dark: {
 		theme: dark,
@@ -222,13 +257,14 @@ export const themeSettings = {
 		xTermTheme: xTermDarkTheme,
 		color1: '\x1b[38;2;208;103;157m',
 		color2: '\x1b[38;2;173;215;253m',
-		rainbowBracket: darkBracketColors
+		rainbowBracket: darkBracketColors,
+		hljsCss: themeCSSMap.greyScale
 	},
 
 	defaultLight: {
 		theme: [],
-		background: 'white',
-		color: 'black',
+		background: '#ffffff',
+		color: '#000000',
 		mode: 'light',
 		xTermTheme: xTermGithubLightTheme,
 		color1: '',
@@ -241,7 +277,8 @@ export const themeSettings = {
 			blue: '#0000FF',
 			indigo: '#00BFFF',
 			violet: '#FF00FF'
-		}
+		},
+		hljsCss: themeCSSMap.greyScale
 	},
 	mojo: {
 		theme: mojo,
@@ -251,6 +288,7 @@ export const themeSettings = {
 		xTermTheme: xTermMojoTheme,
 		color1: '\x1b[38;2;200;100;100m',
 		color2: '\x1b[38;2;65;166;217m',
-		rainbowBracket: mojoBracketColors
+		rainbowBracket: mojoBracketColors,
+		hljsCss: themeCSSMap.pandaSyntaxDark
 	}
 } as const satisfies Record<string, ThemeSettingType>

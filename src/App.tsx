@@ -1,18 +1,25 @@
 import { createEffect } from 'solid-js'
+import { Dynamic } from 'solid-js/web'
+import { Chat } from './components/Chat/Chat'
+import { GlobalLoader } from './components/GlobalLoader'
 import { initialTree } from './consts/tree'
-import { FSProvider } from './context/FsContext'
-import { Main } from './Main'
-import { setCSSVariable } from './utils/dom'
+import { ContextMenu, useContextMenu } from './context/ContextMenu'
+import { FSProvider, isMock } from './context/FsContext'
+import { MockFsProvider } from './mocks/FsContext.mock'
+import { fontFamilyWithFallback } from './stores/fontStore'
 import {
 	baseFontSize,
 	bracketColors,
 	currentBackground,
 	currentColor
 } from './stores/themeStore'
-import { fontFamilyWithFallback } from './stores/fontStore'
-import { Sandpack } from './utils/Sandpack'
+import { setCSSVariable } from './utils/dom'
+import { Main } from './Main'
+// import './scripts/svgToCmp'
 
 export default function App() {
+	const { hideContextMenu } = useContextMenu()
+
 	createEffect(() => {
 		setCSSVariable('--font-family', fontFamilyWithFallback())
 
@@ -32,8 +39,15 @@ export default function App() {
 	})
 
 	return (
-		<FSProvider initialTree={initialTree}>
-			<Main />
-		</FSProvider>
+		<Dynamic
+			component={isMock ? MockFsProvider : FSProvider}
+			initialTree={initialTree}
+		>
+			<Chat>
+				<Main />
+			</Chat>
+			<ContextMenu onClose={hideContextMenu} />
+			<GlobalLoader />
+		</Dynamic>
 	)
 }

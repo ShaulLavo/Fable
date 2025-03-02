@@ -1,1 +1,1 @@
-export const isDev = import.meta.env.MODE === 'development'
+export const SYSTEM_PATHS = ['/store.json']

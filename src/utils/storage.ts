@@ -1,6 +1,7 @@
 import { LOCAL_STORAGE_CAP } from '../consts/storage'
 
 export function storageKey(key: string): string {
+	return key
 	const ID_NAME = 'fs-id'
 	let id = localStorage.getItem(ID_NAME)
 	if (!id) {

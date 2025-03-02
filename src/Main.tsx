@@ -1,36 +1,38 @@
 import Resizable from '@corvu/resizable'
-import hotkeys from 'hotkeys-js'
-import { Accessor, createSignal, For } from 'solid-js'
+import { createEffect, createSignal, For, Show } from 'solid-js'
 import { Editor } from './components/Editor/Editor'
 import { FileSystem } from './components/FileSystem/FileSystem'
-import { useOPFS } from './hooks/useOPFS'
 import {
 	horizontalPanelSize,
+	isStatusBar,
+	isZenMode,
 	mainSideBarPosition,
 	setHorizontalPanelSize,
-	toggleSideBar,
+	setIsZenMode,
 	updateEditorPanelSize
 } from './stores/appStateStore'
-import { setIsTsLoading } from './stores/editorStore'
 import {
 	currentBackground,
-	currentColor,
-	dragHandleColor
+	dragHandleColor,
+	secondaryColor
 } from './stores/themeStore'
-import { initTsWorker, TypeScriptWorker } from './utils/worker'
 
-import {
-	createElementSize,
-	NullableSize
-} from '@solid-primitives/resize-observer'
-import { Portal } from 'solid-js/web'
+import { file } from 'opfs-tools'
+import { Dynamic, Portal } from 'solid-js/web'
+import BinaryFileViewer from './components/BinaryFileViewer'
+import { EditorNav } from './components/Editor/EditorNav'
+import { EditorTabs } from './components/Editor/EditorTabs'
+import ImageViewer from './components/ImageViewer'
+import SearchPalette from './components/SeatchBar'
+import { StatusBar } from './components/StatusBar'
 import { ResizableHandle, ResizablePanel } from './components/ui/Resizable'
+import { useFS } from './context/FsContext'
+import { useFileExtension } from './hooks/useFileExtension'
 import { fontFamilyWithFallback } from './stores/fontStore'
-
-export let worker: TypeScriptWorker = null!
+import { BASE_ICONS } from './stores/icons'
+import { cn } from './utils/cn'
 
 export function Main() {
-	const OPFS = useOPFS()
 	const [editorContainer, setEditorContainer] = createSignal<HTMLDivElement>(
 		null!
 	)
@@ -38,38 +40,32 @@ export function Main() {
 		null!
 	)
 	const [leftContainer, setLeftContainer] = createSignal<HTMLDivElement>(null!)
+	const [statusBarRef, setStatusBarRef] = createSignal<HTMLDivElement>(null!)
 
-	const [isWorkerReady, setIsWorkerReady] = createSignal(false)
-	initTsWorker(async tsWorker => {
-		worker = tsWorker
-		setIsWorkerReady(true)
-	}, setIsTsLoading)
-	const editorSize = createElementSize(editorContainer)
-
-	hotkeys('ctrl+b', toggleSideBar)
 	return (
 		<div style={{ 'font-family': fontFamilyWithFallback() }}>
+			<SearchPalette />
 			<Resizable
 				sizes={horizontalPanelSize()}
 				onSizesChange={size => {
 					if (size.length !== 2) return
 					if (size[0] === 0.5 && size[1] === 0.5) return
-
 					setHorizontalPanelSize(size)
 				}}
 				class="w-full flex"
 				style={{
 					'background-color': currentBackground(),
-					color: currentColor()
+					color: secondaryColor()
 				}}
 				orientation="horizontal"
 				accessKey="horizontal"
 			>
 				<ResizablePanel
-					class="overflow-x-hidden border-none"
+					class="overflow-x-hidden border-none h-full"
 					initialSize={horizontalPanelSize()?.[0]}
 					id="left-sidebar"
 					ref={setLeftContainer}
+					collapsible
 				>
 					<Portal
 						mount={
@@ -84,7 +80,7 @@ export function Main() {
 				<ResizableHandle
 					style={{
 						'background-color': dragHandleColor(),
-						width: '0.5px'
+						width: '2px'
 					}}
 				/>
 				<ResizablePanel
@@ -101,22 +97,31 @@ export function Main() {
 								: leftContainer()
 						}
 					>
-						<EditorLayout
-							editorSize={editorSize}
-							isWorkerReady={isWorkerReady}
-						/>
+						<EditorLayout />
 					</Portal>
 				</ResizablePanel>
 			</Resizable>
+
+			<Show when={isStatusBar()}>
+				<StatusBar ref={setStatusBarRef} />
+			</Show>
 		</div>
 	)
 }
 interface EditorLayoutProps {
-	editorSize: Readonly<NullableSize>
-	isWorkerReady: Accessor<boolean>
 	extraKeyBindings?: Record<string, () => boolean>
 }
 const EditorLayout = (props: EditorLayoutProps) => {
+	const { isBinary, isImage } = useFileExtension()
+	const { currentFile } = useFS()
+	const [fileBuffer, setFileBuffer] = createSignal<Uint8Array>()
+	createEffect(async () => {
+		if (isBinary() || isImage()) {
+			setFileBuffer(
+				new Uint8Array(await file(currentFile()?.path!).arrayBuffer())
+			)
+		}
+	})
 	const [editorPanels, setEditorPanels] = createSignal([
 		{ id: 1, content: 'Editor 1' }
 		// { id: 2, content: 'Editor 2' }
@@ -144,7 +149,7 @@ const EditorLayout = (props: EditorLayoutProps) => {
 			}}
 			style={{
 				'background-color': currentBackground(),
-				color: currentColor()
+				color: secondaryColor()
 			}}
 			orientation="horizontal"
 			accessKey="horizontal"
@@ -157,14 +162,26 @@ const EditorLayout = (props: EditorLayoutProps) => {
 							initialSize={editorSizes()[index()]}
 							// initialSize={editorSizes()[index()]}
 						>
-							{/* <EditorTabs index={index()} /> */}
+							<div class="flex flex-1 justify-between">
+								<EditorTabs index={index()} />
+								<div class="flex items-center pr-1">
+									<button onClick={() => setIsZenMode(!isZenMode())}>
+										<Dynamic component={BASE_ICONS.zen} />
+									</button>
+								</div>
+							</div>
+							<EditorNav index={index()} />
 
-							<Editor
-								extraKeyBindings={props.extraKeyBindings}
-								size={props.editorSize}
-								isWorkerReady={props.isWorkerReady}
-								index={index()}
-							/>
+							<Show when={isBinary()}>
+								<BinaryFileViewer fileData={fileBuffer()} />
+							</Show>
+							<Show when={isImage()}>
+								<ImageViewer fileData={fileBuffer()} />
+							</Show>
+
+							<div class={cn({ hidden: isBinary() })}>
+								<Editor index={index()} />
+							</div>
 						</ResizablePanel>
 						{index() < editorPanels().length - 1 && (
 							<ResizableHandle

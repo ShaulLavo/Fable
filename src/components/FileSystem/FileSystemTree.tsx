@@ -1,4 +1,4 @@
-import { batch, Component, createSignal, For, Show } from 'solid-js'
+import { batch, Component, createSignal, For, on, Show } from 'solid-js'
 
 import { isDev } from 'solid-js/web'
 import { EMPTY_NODE_NAME } from '../../consts/FS'
@@ -8,8 +8,20 @@ import { Folder, FSNode, isFolder } from '../../types/FS.types'
 import { cn } from '../../utils/cn'
 import { NodeNameInput } from './NameInput'
 import { Node } from './Node'
-import { bracketColors, isDark } from '../../stores/themeStore'
+import {
+	bracketColors,
+	currentTheme,
+	currentThemeName,
+	isDark,
+	setTheme,
+	ThemeKey,
+	themeSettings
+} from '../../stores/themeStore'
 import { getLighterRgbColor } from '../../utils/color'
+import { ContextMenuItem, useContextMenu } from '../../context/ContextMenu'
+import { SYSTEM_PATHS } from '../../consts/app'
+import { viewTransition } from '../../utils/viewTransition'
+import { processPasaclCase } from '../../utils/text'
 
 export interface FileSystemTreeProps {
 	node: FSNode
@@ -18,12 +30,18 @@ export interface FileSystemTreeProps {
 	isContainerHovered: boolean
 }
 
-const SYSTEM_PATHS = ['/store.json']
-
 export const FileSystemTree: Component<FileSystemTreeProps> = props => {
 	if (!isDev && SYSTEM_PATHS.includes(props.node.path)) return null
-	const { setCurrentPath, setCurrentFolder, setIsOpen, setCurrentNode, fs } =
-		useFS()
+
+	const {
+		setCurrentFolder,
+		setIsOpen,
+		setCurrentNode,
+		fs,
+		updateNodeName,
+		removeNode
+	} = useFS()
+
 	const {
 		setDraggable,
 		setDropzone,
@@ -32,11 +50,15 @@ export const FileSystemTree: Component<FileSystemTreeProps> = props => {
 		isDragged,
 		draggedNode
 	} = useFsDnd(props.node)
+
+	const { showContextMenu } = useContextMenu()
+
 	const isTemp = () => props.node.name === EMPTY_NODE_NAME
 	const [isEditing, setIsEditing] = createSignal(isTemp())
 	const [editingValue, setEditingValue] = createSignal('')
 
-	const onClick = () => {
+	const onClick = (e: MouseEvent) => {
+		e.stopPropagation()
 		const node = props.node
 		batch(() => {
 			if (isFolder(node)) {
@@ -46,7 +68,6 @@ export const FileSystemTree: Component<FileSystemTreeProps> = props => {
 				if (props.parent) setCurrentFolder(props.parent)
 			}
 			setCurrentNode(node)
-			setCurrentPath(node.path)
 		})
 	}
 	const getLineColor = () => {
@@ -57,9 +78,51 @@ export const FileSystemTree: Component<FileSystemTreeProps> = props => {
 		const alpha = isDark() ? 0.25 : 0.5
 		return getLighterRgbColor(colorByDepth, alpha)
 	}
+
+	const themes = Object.keys(themeSettings).map(theme => {
+		return {
+			label: processPasaclCase(theme),
+			action: () => {
+				setTheme(theme as ThemeKey)
+			},
+			onHover: () => {
+				if (currentThemeName() === theme) return
+				viewTransition(() => {
+					setTheme(theme as ThemeKey)
+				})
+			}
+		}
+	})
+
+	const contextMenu: ContextMenuItem[] = [
+		{
+			label: 'Rename...',
+			action: () => {
+				setIsEditing(true)
+				setEditingValue(props.node.name)
+			}
+		},
+		{
+			label: 'Delete',
+			action: () => {
+				removeNode(props.node)
+			}
+		},
+		,
+		{
+			label: 'New File',
+			action: () => {
+				console.log('New File')
+			}
+		},
+		{ label: 'themes', subMenuItems: themes }
+	]
 	return (
 		<div
 			ref={setDropzone}
+			onContextMenu={e => {
+				showContextMenu(e, contextMenu)
+			}}
 			class={cn(
 				'relative px-1 rounded select-none box-content transition duration-200 ease-in-out',
 				{
@@ -100,7 +163,9 @@ export const FileSystemTree: Component<FileSystemTreeProps> = props => {
 				style={{
 					'margin-left': `${props.fontSize / 2}px `,
 					'padding-left': `${props.fontSize / 2}px `,
-					'border-color': getLineColor()
+					'border-color': props.isContainerHovered
+						? getLineColor()
+						: 'transparent'
 				}}
 			>
 				<Show when={isFolder(props.node) && props.node.isOpen}>

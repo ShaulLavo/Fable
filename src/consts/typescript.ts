@@ -9,5 +9,7 @@ export const compilerOptions: ts.CompilerOptions = {
 	isolatedModules: true,
 	jsx: ts.JsxEmit.React,
 	types: ['jsdom', 'node', 'react'],
-	lib: ['es5', 'es6', 'dom', 'ES2015']
+	lib: ['es5', 'es6', 'dom', 'ES2015'],
+	allowImportingTsExtensions: true
+	// jsxImportSource: 'solid-js'
 } as const

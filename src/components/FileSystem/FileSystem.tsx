@@ -1,18 +1,21 @@
 import { createPointerListeners } from '@solid-primitives/pointer'
-import { VsNewFile, VsNewFolder } from 'solid-icons/vs'
 import { createSignal, For } from 'solid-js'
 import { EMPTY_NODE_NAME } from '../../consts/FS'
 import { useFS } from '../../context/FsContext'
 import { createInnerZoom } from '../../hooks/createInnerZoom'
 import { useOPFS } from '../../hooks/useOPFS'
-import { currentBackground, currentColor } from '../../stores/themeStore'
+import { BASE_ICONS } from '../../stores/icons'
+import { secondaryColor, secondaryBackground } from '../../stores/themeStore'
+import { Span } from '../ui/Span'
 import { FileSystemTree } from './FileSystemTree'
-import { ICONS } from '../../stores/icons'
+import { Dynamic } from 'solid-js/web'
+import { GlobalLoader, Loader } from '../GlobalLoader'
+import { isFsLoading } from '../../stores/appStateStore'
 
 interface FileSystemProps {}
 
 export function FileSystem(props: FileSystemProps) {
-	const { fs, addNode } = useFS()
+	const { fs, addNode, removeNode, currentNode, updateNodeName } = useFS()
 	const OPFS = useOPFS()
 	const [editorContainer, setEditorContainer] = createSignal<HTMLDivElement>(
 		null!
@@ -33,31 +36,56 @@ export function FileSystem(props: FileSystemProps) {
 
 	return (
 		<div
-			class="flex flex-col min-w-28"
+			class="flex flex-col  min-w-28 h-lvh relative z-80"
 			ref={setEditorContainer}
 			style={{
-				'background-color': currentBackground(),
-				color: currentColor()
+				'background-color': secondaryBackground(),
+				color: secondaryColor()
+				// 'z-index': 80,
+				// position: 'relative'
 			}}
 		>
+			<Loader
+				class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+				show={isFsLoading()}
+			/>
 			<div class="flex justify-between items-center px-2">
 				{fs.name.toUpperCase()}
 				<div class="flex items-center">
-					<span
-						class="p-1 hover:bg-gray-200 hover:bg-opacity-10 transition duration-200 ease-in-out"
+					<Span
+						enableHover
+						class="p-1"
 						onClick={() => addNode({ name: EMPTY_NODE_NAME })}
+						title="Add File"
 					>
-						<ICONS.addFile />
-					</span>
-					<span
-						class="p-1 hover:bg-gray-200 hover:bg-opacity-10 transition duration-200 ease-in-out"
+						<Dynamic component={BASE_ICONS.addFile} />
+					</Span>
+					<Span
+						enableHover
+						class="p-1"
 						onClick={() => addNode({ name: EMPTY_NODE_NAME, children: [] })}
+						title="Add Folder"
 					>
-						<ICONS.addFolder />
-					</span>
+						<Dynamic component={BASE_ICONS.addFolder} />
+					</Span>
+					<Span
+						enableHover
+						class="p-1"
+						onClick={() => removeNode(currentNode())}
+						title="Delete"
+					>
+						<Dynamic component={BASE_ICONS.trash} />
+					</Span>
+					<Span
+						enableHover
+						class="p-1"
+						onClick={() => updateNodeName(currentNode(), EMPTY_NODE_NAME)}
+						title="Rename"
+					>
+						<Dynamic component={BASE_ICONS.rename} />
+					</Span>
 				</div>
 			</div>
-
 			<For each={fs.children}>
 				{node => (
 					<FileSystemTree

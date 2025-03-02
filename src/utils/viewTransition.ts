@@ -1,10 +1,20 @@
 import { batch } from 'solid-js'
 
+const viewTranstionMock: ViewTransition = {
+	finished: Promise.resolve(undefined),
+	ready: Promise.resolve(undefined),
+	skipTransition: () => {},
+	updateCallbackDone: Promise.resolve(undefined)
+}
+
 export const viewTransition = (fn: () => void) => {
-	if (!document.startViewTransition) return fn()
+	if (!document.startViewTransition) {
+		fn()
+		return viewTranstionMock
+	}
 	return document.startViewTransition(fn)
 }
 
 export const viewTransitionBatched = (fn: () => void) => {
-	viewTransition(() => batch(fn))
+	return viewTransition(() => batch(fn))
 }

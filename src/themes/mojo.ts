@@ -5,7 +5,7 @@ export const defaultSettingsMojo: CreateThemeOptions['settings'] = {
 	background: '#1E1E1E', // editorPane.background
 	foreground: '#A6A6A6', // activityBar.foreground
 	caret: '#007ACC', // editor.selectionBackground (approximation for caret)
-	selection: '#007ACC', // editor.selectionBackground (no transparency)
+	selection: 'rgba(0, 122, 204, 0.15)', // editor.selectionBackground (no transparency)
 	selectionMatch: '#ADD6FF', // editor.selectionHighlightBackground
 	gutterBackground: '#1E1E1E', // editor.lineHighlightBackground
 	gutterForeground: '#444', // editorLineNumber.foreground
@@ -61,7 +61,7 @@ export const xTermMojoTheme = {
 	background: '#1E1E1E', // editorPane.background
 	cursor: '#007ACC', // editor.selectionBackground (used as caret)
 	cursorAccent: '#1E1E1E4C', // editor.lineHighlightBackground
-	selectionBackground: '#007ACC', // editor.selectionBackground
+	selectionBackground: 'rgba(0, 122, 204, 0.2)', // editor.selectionBackground
 	selectionForeground: '#A6A6A6', // activityBar.foreground
 	selectionInactiveBackground: '#ADD6FF', // editor.selectionHighlightBackground
 	black: '#1E1E1E', // editorPane.background

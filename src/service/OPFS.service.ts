@@ -22,6 +22,8 @@ export async function* readFileChunks(
 		}
 		buffer = concat(buffer, value) as Uint8Array<ArrayBuffer>
 		while (buffer.length >= chunkSize) {
+			// reader.releaseLock()
+			// await reader.closed
 			yield decoder.decode(buffer.slice(0, chunkSize), { stream: true })
 			buffer = buffer.slice(chunkSize)
 		}
@@ -50,9 +52,14 @@ const getFileInChunks = async (
 	const chunks = readFileChunks(f, size)
 	return chunks
 }
-const getFile = async (file: File) => {
-	const f = opfsFile(file.path)
-	return await f.text()
+const getFile = async (file: File, as?: 'text' | 'buffer') => {
+	try {
+		const f = opfsFile(file.path)
+		return await f.text()
+	} catch (e) {
+		console.error('failed to get file content!' + JSON.stringify(file), e)
+		// throw e
+	}
 }
 
 const move = async (node: FSNode, oldPath: string) => {
@@ -135,7 +142,7 @@ async function mapFiles(
 			await Promise.all(node.children.map(child => traverse(child)))
 		} else {
 			const content = await getFile(node as File)
-			result.files[node.path] = { code: content }
+			result.files[node.path] = { code: content ?? '' }
 		}
 	}
 	await traverse(root)

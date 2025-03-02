@@ -1,4 +1,7 @@
+import { IconTypes } from 'solid-icons'
+import { getNodeIcon } from '../stores/icons'
 import { Folder, FSNode, isFolder } from '../types/FS.types'
+import { ValidComponent } from 'solid-js'
 
 export function compareNodes(a: FSNode, b: FSNode) {
 	const aIsFolder = isFolder(a)
@@ -77,4 +80,35 @@ export function nodeChildOf(node: FSNode, folder: Folder): boolean {
 	}
 
 	return true
+}
+
+export function collectItems(node: FSNode) {
+	type Item = {
+		name: string
+		path: string
+		type: 'folder' | 'file'
+		Icon: ValidComponent
+	}
+	if (isFolder(node)) {
+		let items: Item[] = []
+
+		items.push({
+			name: node.name,
+			path: node.path,
+			type: 'folder',
+			Icon: getNodeIcon(node)
+		})
+
+		items = items.concat(node.children.flatMap(collectItems))
+		return items
+	} else {
+		return [
+			{
+				name: node.name,
+				path: node.path,
+				type: 'file',
+				Icon: getNodeIcon(node)
+			} as Item
+		]
+	}
 }

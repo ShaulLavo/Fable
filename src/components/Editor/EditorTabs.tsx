@@ -11,15 +11,20 @@ import {
 } from 'solid-js'
 
 import { createEventListener } from '@solid-primitives/event-listener'
+import { Dynamic } from 'solid-js/web'
 import { useFS } from '../../context/FsContext'
+import { getNode } from '../../service/FS.service'
+import { getNodeIcon } from '../../stores/icons'
+import { currentColor } from '../../stores/themeStore'
+import { cn } from '../../utils/cn'
+import { Span } from '../ui/Span'
 
 interface EditorTabsProps {
 	index: number
 }
 
 export const EditorTabs: Component<EditorTabsProps> = ({ index }) => {
-	const { openFiles } = useFS()
-
+	const { tabs } = useFS()
 	let tabContainer: HTMLDivElement = null!
 	onMount(() => {
 		createEventListener(tabContainer, 'wheel', (e: WheelEvent) => {
@@ -34,15 +39,10 @@ export const EditorTabs: Component<EditorTabsProps> = ({ index }) => {
 			ref={tabContainer}
 			class="flex overflow-x-auto whitespace-nowrap z-50 relative"
 		>
-			<For each={Array.from(openFiles.keys())}>
+			<For each={tabs()}>
 				{(path, tabIndex) => (
 					<Show when={path}>
-						<Tab
-							file={path}
-							filePath={filePath}
-							tabIndex={tabIndex}
-							index={index}
-						/>
+						<Tab file={path} tabIndex={tabIndex} index={index} />
 					</Show>
 				)}
 			</For>
@@ -52,24 +52,21 @@ export const EditorTabs: Component<EditorTabsProps> = ({ index }) => {
 
 const Tab = ({
 	file,
-	filePath,
 	index,
 	tabIndex
 }: {
 	file: string
-	filePath: Accessor<string | undefined>
 	tabIndex: Accessor<number>
 	index: number
 }) => {
-	console.log('Tab', file, filePath, index, tabIndex)
+	const { openFiles, fs, currentPath, setCurrentNode, currentNode, tabs } =
+		useFS()
 	const [isHovered, setIsHovered] = createSignal(false)
-	const isSelected = () => filePath() === file
-	const { openFiles, setCurrentPath, fs, currentPath, setCurrentNode } = useFS()
+	const isSelected = () => currentNode().path === file
 
 	let tabRef: HTMLDivElement = null!
 
 	createEffect(() => {
-		// if (isSelected() && currentEditorIndex() === index) {
 		if (isSelected()) {
 			tabRef.scrollIntoView({
 				behavior: 'smooth',
@@ -85,46 +82,48 @@ const Tab = ({
 			if (isSelected()) {
 				const currentIndex = tabIndex()
 				if (openFiles.size === 1) {
-					setLastKnownFile('')
-					setCurrentPath('')
+					setCurrentNode(fs)
 				} else if (currentIndex > 0) {
-					setLastKnownFile(openFiles()[currentIndex - 1])
-					setCurrentPath(openFiles()[currentIndex - 1])
+					const path = tabs()[currentIndex - 1]
+					const node = getNode(fs, path) ?? fs
+					setCurrentNode(node)
 				} else {
-					setLastKnownFile(openFiles()[1])
-					setCurrentPath(openFiles()[1])
+					const path = tabs()[1]
+					const node = getNode(fs, path) ?? fs
+					setCurrentNode(node)
 				}
 			}
-			fileMap.delete(file)
-			setPathsToOpen(current => current.filter(path => path !== file))
-			await saveTabs(fileMap.keys(), fs()!, 'editor-' + index + '-tab')
+			openFiles.delete(file)
 		})
 	}
 
 	//  EditorState.toJSON/fromJSON save with tab data
+
 	return (
-		<div
-			title={filePath()}
+		<Span
+			selected={isSelected()}
+			title={file}
 			ref={tabRef}
 			onMouseOver={() => setIsHovered(true)}
 			onMouseOut={() => setIsHovered(false)}
 			onClick={() => {
 				batch(() => {
-					setCurrentEditorIndex(index)
-					setCurrentPath(file)
+					const node = getNode(fs, file) ?? fs
+					setCurrentNode(node)
 				})
 			}}
-			class={`px-1.5 py-1.5 focus:outline-none text-xs items-center flex cursor-pointer relative z-50 box-border ${
-				isSelected()
-					? 'border-t-2'
-					: `${isDark() ? 'bg-gray-200' : 'bg-gray-600'} bg-opacity-5`
-			}`}
+			class={cn(
+				`px-1.5 py-1.5 focus:outline-none text-xs items-center flex cursor-pointer relative z-50 box-border border-t-1`
+			)}
 			style={{
-				'border-color': currentEditorIndex() === index ? currentColor() : ''
+				'border-color': isSelected() ? currentColor() : 'transparent'
 			}}
 			data-value={file}
 			role="button"
 		>
+			<Dynamic component={getNodeIcon(getNode(fs, file)!)} size={14} />
+			<span class="px-1" />
+
 			{file.split('/').pop()}
 
 			<button
@@ -137,6 +136,6 @@ const Tab = ({
 			>
 				<VsClose size={16} color={currentColor()} />
 			</button>
-		</div>
+		</Span>
 	)
 }

@@ -2,85 +2,61 @@ import { ReactiveMap } from '@solid-primitives/map'
 import { dir as fsDir, file as fsFile, write as fsWrite } from 'opfs-tools'
 import { OPFS } from '../service/OPFS.service'
 import { FSNode, File, Folder, isFolder } from '../types/FS.types'
-const enum ACTIONS {
-	SAVE_FILE = 'SAVE_FILE',
-	GET_FILE = 'GET_FILE',
-	MOVE = 'MOVE',
-	REMOVE = 'REMOVE',
-	TREE = 'TREE',
-	WRITE = 'WRITE',
-	READ_CHUNK = 'READ_CHUNK',
-	MAP_FILES = 'MAP_FILES',
-	CREATE_FILE = 'CREATE_FILE',
-	CREATE_FOLDER = 'CREATE_FOLDER'
-}
-const pendingActions = new ReactiveMap<ACTIONS, number>()
-export function useOPFS() {
-	const addAction = (action: ACTIONS) => {
-		const count = pendingActions.get(action) ?? 0
-		pendingActions.set(action, count + 1)
-	}
-	const removeAction = (action: ACTIONS) => {
-		const count = pendingActions.get(action) ?? 0
-		if (count <= 1) {
-			pendingActions.delete(action)
-		} else {
-			pendingActions.set(action, count - 1)
-		}
-	}
-	const measure = async <T, Args extends unknown[]>(
-		action: ACTIONS,
-		fn: (...args: Args) => Promise<T>,
-		...args: Args
-	): Promise<T> => {
-		addAction(action)
-		const start = performance.now()
-		try {
-			return await fn(...args)
-		} finally {
-			const duration = performance.now() - start
-			console.info(`${action} took ${duration}ms`)
-			removeAction(action)
-		}
-	}
+import { ACTIONS, measure } from '../stores/measureStore'
 
+export function useOPFS() {
 	const saveFile = (file: File, content: string) =>
-		measure(ACTIONS.SAVE_FILE, () => OPFS.saveFile(file, content))
+		measure(
+			ACTIONS.SAVE_FILE,
+			{ ...file, size: content.length, source: 'OPFS' },
+			() => OPFS.saveFile(file, content)
+		)
 
 	const getFile = (file: File) =>
-		measure(ACTIONS.GET_FILE, () => OPFS.getFile(file))
+		measure(ACTIONS.GET_FILE, { ...file, source: 'OPFS' }, () =>
+			OPFS.getFile(file)
+		)
 
 	const move = (node: FSNode, oldPath: string) =>
-		measure(ACTIONS.MOVE, () => OPFS.move(node, oldPath))
+		measure(ACTIONS.MOVE, { ...node, oldPath, source: 'OPFS' }, () =>
+			OPFS.move(node, oldPath)
+		)
 
 	const remove = (node: FSNode) =>
-		measure(ACTIONS.REMOVE, () => OPFS.remove(node))
+		measure(ACTIONS.REMOVE, { ...node, source: 'OPFS' }, () =>
+			OPFS.remove(node)
+		)
 
-	const tree = (node: Folder) => measure(ACTIONS.TREE, () => OPFS.tree(node))
+	const tree = (node: Folder) =>
+		measure(ACTIONS.TREE, { ...node, source: 'OPFS' }, () => OPFS.tree(node))
 
 	const write: typeof fsWrite = (...params) =>
-		measure(ACTIONS.WRITE, () => fsWrite(...params))
+		measure(ACTIONS.WRITE, { source: 'OPFS', params }, () => fsWrite(...params))
 
 	const getFileInChunks = (file: File, size?: number) =>
-		measure(ACTIONS.READ_CHUNK, () => OPFS.getFileInChunks(file, size))
+		measure(ACTIONS.READ_CHUNK, { ...file, size, source: 'OPFS' }, () =>
+			OPFS.getFileInChunks(file, size)
+		)
 
 	const mapFiles = (root: Folder) =>
-		measure(ACTIONS.MAP_FILES, OPFS.mapFiles, root)
+		measure(ACTIONS.MAP_FILES, { ...root, source: 'OPFS' }, OPFS.mapFiles, root)
 
 	const getOpfsNode = async (node: FSNode) =>
 		isFolder(node) ? fsDir(node.path) : fsFile(node.path)
 
-	const isLoading = () => pendingActions.size > 0
-
-	const actions = () => Array.from(pendingActions.keys())
 	const createFile = (path: string, content: string) =>
-		measure(ACTIONS.CREATE_FILE, async () => {
-			const file = await fsFile(path).createWriter()
-			await file.write(content)
-			return file
-		})
+		measure(
+			ACTIONS.CREATE_FILE,
+			{ path, size: content.length, source: 'OPFS' },
+			async () => {
+				const file = await fsFile(path).createWriter()
+				await file.write(content)
+				await file.close()
+				return file
+			}
+		)
 	const createFolder = (path: string) =>
-		measure(ACTIONS.CREATE_FOLDER, async () => {
+		measure(ACTIONS.CREATE_FOLDER, { path, source: 'OPFS' }, async () => {
 			const folder = await fsDir(path).create()
 			return folder
 		})
@@ -100,8 +76,6 @@ export function useOPFS() {
 		remove,
 		tree,
 		write,
-		isLoading,
-		actions,
 		getFileInChunks,
 		getOpfsNode,
 		mapFiles,

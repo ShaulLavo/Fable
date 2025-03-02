@@ -61,6 +61,7 @@ function WorkerStatusProxy<T extends {}>(
 		}
 	})
 }
+
 export function initTsWorker(
 	cb: (worker: TypeScriptWorker) => void,
 	setIsLoading: (b: boolean) => void
@@ -82,7 +83,7 @@ export function initTsWorker(
 			await worker.initialize()
 			cb(worker)
 			console.info(
-				`time for TS worker to load: ${performance.now() - start} milliseconds`
+				`TS worker took ${(performance.now() - start).toFixed(2)} ms`
 			)
 		}
 	}

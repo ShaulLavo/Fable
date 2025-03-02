@@ -1,11 +1,21 @@
 import { insertTab } from '@codemirror/commands'
-import { Command, KeyBinding } from '@codemirror/view'
+import { Command, EditorView, KeyBinding } from '@codemirror/view'
 import { vscodeKeymap } from '@replit/codemirror-vscode-keymap'
 import { formatCode, getConfigFromExt } from './format'
 // import { code, setCode } from '~/stores/editorStore'
 import { File, Folder } from '../types/FS.types'
 import { getNode } from '../service/FS.service'
-import { toggleSideBar } from '../stores/appStateStore'
+import { setIsSearchBar, toggleSideBar } from '../stores/appStateStore'
+import hotkeys from 'hotkeys-js'
+import { Accessor } from 'solid-js'
+
+hotkeys('ctrl+b,command+b', toggleSideBar)
+hotkeys('ctrl+p,command+p', e => {
+	e.preventDefault()
+	setIsSearchBar(p => !p)
+})
+// hotkeys('ctrl+p', toggleSideBar)
+
 const overrideMap = {
 	Tab: { key: 'Tab', run: insertTab, preventDefault: true },
 	'Mod-f': {
@@ -23,16 +33,37 @@ export function createKeymap(
 	setCode: (code: string) => void,
 	saveFile: (file: File, content: string) => Promise<void>,
 	fs: Folder,
-	extraKeymap: KeyBinding[] = []
+	extraKeymap: KeyBinding[] = [],
+	view: Accessor<EditorView>,
+	skipSync: (b: boolean) => void
 ) {
 	const additionalKeymap = [
 		{
 			key: 'Shift-Alt-f',
 			run: () => {
-				formatCode(getConfigFromExt(currentExtension()), code, setCode)
+				formatCode({
+					code,
+					setCode: newCode => {
+						skipSync(true)
+						view().dispatch({
+							changes: {
+								from: 0,
+								to: code()?.length,
+								insert: newCode ?? ''
+							}
+						})
+					},
+					config: getConfigFromExt(currentExtension()),
+					cursorOffset: view().state.selection.main.head,
+					setCursor: offset => {
+						view().dispatch({ selection: { anchor: offset, head: offset } })
+					}
+				})
+
 				return true
 			},
-			preventDefault: true
+			preventDefault: true,
+			scope: 'editor'
 		},
 		{
 			key: 'Mod-s',
@@ -55,16 +86,28 @@ export function createKeymap(
 				saveFile(node as File, currentCode)
 				return true
 			},
-			preventDefault: true
+			preventDefault: true.valueOf,
+			scope: 'editor'
 		},
 		{
-			key: 'Ctrl-b',
+			key: 'Mod-b',
 			run: () => {
 				toggleSideBar()
 				return true
 			},
 			preventDefault: true,
-			stopPropagation: false
+			stopPropagation: false,
+			scope: 'editor'
+		},
+		{
+			key: 'Mod-p',
+			run: () => {
+				setIsSearchBar(p => !p)
+				return true
+			},
+			preventDefault: true,
+			stopPropagation: false,
+			scope: 'editor'
 		},
 		...extraKeymap
 	] as KeyBinding[]
