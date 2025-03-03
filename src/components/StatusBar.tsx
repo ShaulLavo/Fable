@@ -71,7 +71,7 @@ export const StatusBar: Component<StatusBarProps> = ({ ref }) => {
 		<>
 			<div
 				ref={ref}
-				class="absolute bottom-0 w-full z-100 flex border-t-2 p-1"
+				class=" w-full z-100 flex border-t-2 p-1"
 				style={{
 					'background-color': secondaryBackground(),
 					'border-color': dragHandleColor()

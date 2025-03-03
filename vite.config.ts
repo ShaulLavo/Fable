@@ -16,10 +16,8 @@ const proxy = () => ({
 		server.middlewares.use((req, res, next) => {
 			const host = req.headers.host || ''
 			if (host.startsWith('app.localhost')) {
-				// Serve the Vite app for app.localhost
 				next()
 			} else if (host.startsWith('localhost')) {
-				// Serve a landing page for localhost
 				res.writeHead(200, { 'Content-Type': 'text/html' })
 				res.end(`
             <html>
@@ -44,13 +42,21 @@ export default defineConfig({
 		fullReloadAlways
 	],
 	server: {
-		port: 3000,
+		port: 8000,
 		headers: {
 			'Cross-Origin-Opener-Policy': 'same-origin',
 			'Cross-Origin-Embedder-Policy': 'require-corp'
 		}
+		// host: '127.0.0.1'
 	},
 	build: {
-		target: 'esnext'
+		target: 'esnext',
+		minify:false,
+		rollupOptions: {
+			output: {
+				format: 'esm',
+				entryFileNames: 'app.js'
+			}
+		}
 	}
 })

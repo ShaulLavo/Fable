@@ -137,6 +137,7 @@ export const FSProvider: ParentComponent<{ initialTree?: Folder }> = props => {
 					tree = await OPFS.tree(fs)
 					tree.name = rootName()
 					setFs(sortTreeInDraft(tree))
+					setCurrentNode(fs.children.find(n => n.name === 'App.tsx')!)
 				} catch (e) {
 					console.error(e)
 				} finally {
@@ -145,7 +146,6 @@ export const FSProvider: ParentComponent<{ initialTree?: Folder }> = props => {
 					)
 					queueMicrotask(() => setStart(0))
 					setIsFsLoading(false)
-					setCurrentNode(fs.children.find(n => n.name === 'App.tsx')!)
 				}
 			},
 			{ defer: true }

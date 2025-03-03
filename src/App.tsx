@@ -1,4 +1,4 @@
-import { createEffect } from 'solid-js'
+import { createEffect, createSignal, Show } from 'solid-js'
 import { Dynamic } from 'solid-js/web'
 import { Chat } from './components/Chat/Chat'
 import { GlobalLoader } from './components/GlobalLoader'
@@ -15,10 +15,13 @@ import {
 } from './stores/themeStore'
 import { setCSSVariable } from './utils/dom'
 import { Main } from './Main'
+import { isStatusBar } from './stores/appStateStore'
+import { StatusBar } from './components/StatusBar'
 // import './scripts/svgToCmp'
 
 export default function App() {
 	const { hideContextMenu } = useContextMenu()
+	const [statusBarRef, setStatusBarRef] = createSignal<HTMLDivElement>(null!)
 
 	createEffect(() => {
 		setCSSVariable('--font-family', fontFamilyWithFallback())
@@ -43,11 +46,21 @@ export default function App() {
 			component={isMock ? MockFsProvider : FSProvider}
 			initialTree={initialTree}
 		>
-			<Chat>
-				<Main />
-			</Chat>
-			<ContextMenu onClose={hideContextMenu} />
-			<GlobalLoader />
+			<div
+				style={{
+					height: window.innerHeight - 28 + 'px'
+				}}
+			>
+				<Chat>
+					<Main />
+				</Chat>
+
+				<ContextMenu onClose={hideContextMenu} />
+				<GlobalLoader />
+			</div>
+			<Show when={isStatusBar()}>
+				<StatusBar ref={setStatusBarRef} />
+			</Show>
 		</Dynamic>
 	)
 }

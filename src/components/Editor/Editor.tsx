@@ -11,6 +11,7 @@ import {
 	setStart,
 	start
 } from '../../stores/editorStore'
+import { historyField } from '@codemirror/commands'
 import { ThemeKey, setTheme } from '../../stores/themeStore'
 import { setFormatter } from '../../utils/format'
 
@@ -48,6 +49,7 @@ export const Editor = ({
 					const { state } = view
 					const { selection, doc } = state
 					const { main } = selection
+
 					const line = doc.lineAt(main.head)
 					setCurrentSelection([main.from, main.to])
 					setCurrentLine(line.number)

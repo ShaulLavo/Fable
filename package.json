@@ -22,7 +22,6 @@
     "@codesandbox/sandpack-client": "^2.19.8",
     "@corvu/resizable": "^0.2.4",
     "@formkit/auto-animate": "^0.8.2",
-    "@happy-js/happy-opfs": "npm:@jsr/happy-js__happy-opfs@^1.8.4",
     "@mlc-ai/web-llm": "^0.2.78",
     "@replit/codemirror-indentation-markers": "^6.5.3",
     "@replit/codemirror-minimap": "^0.5.2",
@@ -63,14 +62,14 @@
     "solid-js": "^1.9.3",
     "solid-spinner": "^0.2.0",
     "tailwind-merge": "^3.0.1",
-    "thememirror": "^2.0.1"
+    "thememirror": "^2.0.1",
+    "opfs-tools": "^0.7.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.0.4",
     "xml2js": "^0.6.2",
     "@types/filesystem": "^0.0.36",
     "@types/wicg-file-system-access": "^2023.10.5",
-    "opfs-tools": "^0.7.0",
     "tailwindcss": "^4.0.4",
     "typescript": "^5.7.2",
     "vite": "^6.0.0",

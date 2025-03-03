@@ -56,8 +56,8 @@ export const Chat: ParentComponent = props => {
 
 	const chatContent = (
 		<div
-			class={cn('flex flex-col h-full relative', {
-				'pb-6': isStatusBar()
+			class={cn('flex flex-col h-full relative flex-1', {
+				// 'pb-6': isStatusBar()
 			})}
 			style={{
 				'background-color': currentBackground()

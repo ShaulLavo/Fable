@@ -22,14 +22,14 @@ export async function formatChatMessage(message: string): Promise<string> {
 	return await marked.parse(message)
 }
 export function useChat(api: ChatApi) {
-	const [messages, _setMessages] = createSignal<Message[]>([
+	const [messages, setMessages] = createSignal<Message[]>([
 		{ id: 1, content: 'Hello! How can I help you today?', role: 'assistant' }
 	])
 
 	const [formattedMessages, setFormattedMessages] = createStore<string[]>([])
 
 	const setMessageAt = (message: Message, index: number) => {
-		_setMessages(prev => {
+		setMessages(prev => {
 			const newMessages = [...prev]
 			newMessages[index] = message
 			return newMessages
@@ -48,6 +48,7 @@ export function useChat(api: ChatApi) {
 
 	const initChat = async () => {
 		await api.asyncInitChat((kind, text) => {
+			console.log({ kind, text })
 			if (!text.trim()) return
 			setMessageAt(
 				{

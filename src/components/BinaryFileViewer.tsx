@@ -6,10 +6,9 @@ import {
 	createEffect,
 	createMemo,
 	createSignal,
-	on
+	onMount
 } from 'solid-js'
 import { useFS } from '../context/FsContext'
-import { useCurrentFile } from '../hooks/useCurrentFile'
 import {
 	bracketColors,
 	currentBackground,
@@ -18,14 +17,19 @@ import {
 } from '../stores/themeStore'
 import { VirtualList } from '@solid-primitives/virtual'
 import { Spinner, SpinnerType } from 'solid-spinner'
+import { createElementBounds } from '@solid-primitives/bounds'
+
 const rowHeight = 24
+
 function byteToHex(byte: number): string {
 	return byte.toString(16).padStart(2, '0').toUpperCase()
 }
+
 const BinaryFileViewer: Component<{ fileData?: Uint8Array }> = props => {
 	const { currentFile } = useFS()
-
 	const [hoveredIndex, setHoveredIndex] = createSignal<number | null>(null)
+	const [containerRef, setContainerRef] = createSignal<HTMLDivElement>(null!)
+	// const bounds = createElementBounds(containerRef)
 
 	const totalRows = createMemo(() =>
 		props.fileData ? Math.ceil(props.fileData!.length / 16) : 0
@@ -36,6 +40,7 @@ const BinaryFileViewer: Component<{ fileData?: Uint8Array }> = props => {
 
 	return (
 		<div
+			ref={setContainerRef}
 			class="container mx-auto p-4"
 			style={{ 'background-color': currentBackground() }}
 		>
@@ -131,4 +136,5 @@ const BinaryFileViewer: Component<{ fileData?: Uint8Array }> = props => {
 		</div>
 	)
 }
+
 export default BinaryFileViewer

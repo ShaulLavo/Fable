@@ -40,11 +40,11 @@ export function Main() {
 		null!
 	)
 	const [leftContainer, setLeftContainer] = createSignal<HTMLDivElement>(null!)
-	const [statusBarRef, setStatusBarRef] = createSignal<HTMLDivElement>(null!)
 
 	return (
 		<div style={{ 'font-family': fontFamilyWithFallback() }}>
 			<SearchPalette />
+
 			<Resizable
 				sizes={horizontalPanelSize()}
 				onSizesChange={size => {
@@ -101,10 +101,6 @@ export function Main() {
 					</Portal>
 				</ResizablePanel>
 			</Resizable>
-
-			<Show when={isStatusBar()}>
-				<StatusBar ref={setStatusBarRef} />
-			</Show>
 		</div>
 	)
 }
@@ -164,12 +160,18 @@ const EditorLayout = (props: EditorLayoutProps) => {
 						>
 							<div class="flex flex-1 justify-between">
 								<EditorTabs index={index()} />
-								<div class="flex items-center pr-1">
+								<div
+									class="flex items-center px-1"
+									style={{
+										background: currentBackground()
+									}}
+								>
 									<button onClick={() => setIsZenMode(!isZenMode())}>
 										<Dynamic component={BASE_ICONS.zen} />
 									</button>
 								</div>
 							</div>
+
 							<EditorNav index={index()} />
 
 							<Show when={isBinary()}>

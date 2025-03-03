@@ -10,7 +10,7 @@ import {
 export const ChatLayout: ParentComponent<{ chat: JSX.Element }> = props => {
 	return (
 		<div
-			class="h-screen w-full"
+			class="w-full h-full flex flex-1"
 			style={{ background: secondaryBackground(), color: secondaryColor() }}
 		>
 			<Resizable

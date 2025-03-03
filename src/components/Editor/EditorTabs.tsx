@@ -28,9 +28,20 @@ export const EditorTabs: Component<EditorTabsProps> = ({ index }) => {
 	let tabContainer: HTMLDivElement = null!
 	onMount(() => {
 		createEventListener(tabContainer, 'wheel', (e: WheelEvent) => {
-			e.preventDefault()
+			const isTrackpad =
+				Math.abs(e.deltaY) < 20 &&
+				(e.deltaX !== 0 || e.deltaY !== 0) &&
+				!e.deltaY.toString().includes('.') // Mouse wheels usually give integer values
 
-			tabContainer.scrollLeft += e.deltaY
+			if (isTrackpad) {
+				// Do nothing - let default trackpad scrolling work
+				return
+			}
+
+			// Handle mouse wheel scrolling
+			e.preventDefault()
+			const scrollSpeed = 2.5
+			tabContainer.scrollLeft += e.deltaY * scrollSpeed
 		})
 	})
 

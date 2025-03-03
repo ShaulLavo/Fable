@@ -19,7 +19,11 @@ const ImageViewer: Component<{ fileData?: Uint8Array }> = props => {
 	return (
 		<div>
 			<Show when={imgUrl()} fallback={<Spinner type={SpinnerType.tailSpin} />}>
-				<img src={imgUrl()!} alt="Image" />
+				<img
+					src={imgUrl()!}
+					class='class="w-full h-full object-contain"'
+					alt="Image"
+				/>
 			</Show>
 		</div>
 	)
