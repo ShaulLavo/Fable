@@ -23,7 +23,7 @@ const proxy = () => ({
             <html>
               <body>
                 <h1>Welcome to the Landing Page!</h1>
-                <a href="http://app.localhost:3000">Go to App</a>
+                <a href="http://app.localhost:8000">Go to App</a>
               </body>
             </html>
           `)
@@ -51,7 +51,7 @@ export default defineConfig({
 	},
 	build: {
 		target: 'esnext',
-		minify:false,
+		minify: false,
 		rollupOptions: {
 			output: {
 				format: 'esm',
