@@ -36,7 +36,7 @@ export function FileSystem(props: FileSystemProps) {
 
 	return (
 		<div
-			class="flex flex-col  min-w-28 h-lvh relative z-80"
+			class="flex flex-col min-w-28 relative z-80 h-full min-h-0"
 			ref={setEditorContainer}
 			style={{
 				'background-color': secondaryBackground(),
@@ -49,7 +49,7 @@ export function FileSystem(props: FileSystemProps) {
 				class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
 				show={isFsLoading()}
 			/>
-			<div class="flex justify-between items-center px-2">
+			<div class="flex justify-between items-center px-2 shrink-0">
 				{fs.name.toUpperCase()}
 				<div class="flex items-center">
 					<Span
@@ -86,15 +86,17 @@ export function FileSystem(props: FileSystemProps) {
 					</Span>
 				</div>
 			</div>
-			<For each={fs.children}>
-				{node => (
-					<FileSystemTree
-						node={node}
-						fontSize={fontSize()}
-						isContainerHovered={isHovered()}
-					/>
-				)}
-			</For>
+			<div class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
+				<For each={fs.children}>
+					{node => (
+						<FileSystemTree
+							node={node}
+							fontSize={fontSize()}
+							isContainerHovered={isHovered()}
+						/>
+					)}
+				</For>
+			</div>
 		</div>
 	)
 }

@@ -19,13 +19,14 @@ import { getChatApi } from '../../stores/llmStore'
 import { TabChip } from '../ui/TabChip'
 import { useFS } from '../../context/FsContext'
 import { getNode } from '../../service/FS.service'
+import ChatModelDropdown from './ChatModelDropdown'
+import { StickToBottom } from '../StickToBottom'
 
 export type Message = {
 	id: number
 	content: string
 	role: 'user' | 'assistant'
 }
-
 export const Chat = () => {
 	const api = getChatApi()
 	const { fs, setCurrentNode } = useFS()
@@ -54,24 +55,29 @@ export const Chat = () => {
 				class="p-3 flex justify-between items-center border-b shrink-0"
 				style={{ 'border-color': dragHandleColor() }}
 			>
-				<h2 class="font-bold flex items-center">
+				{/* <h2 class="font-bold flex items-center">
 					<Dynamic component={BASE_ICONS.chat} />
 					&nbsp; Chat
-				</h2>
+				</h2> */}
+				<ChatModelDropdown />
 			</div>
-			<div class="flex-1 min-h-0 overflow-y-auto p-1 space-y-4">
-				<For each={messages()}>
-					{(message, i) => (
-						<div>
-							<ChatMessage
-								message={message}
-								formattedMessages={formattedMessages}
-								index={i()}
-							/>
-						</div>
-					)}
-				</For>
-			</div>
+			<StickToBottom class="flex-1 min-h-0" initial="instant">
+				{ctx => (
+					<StickToBottom.Content class="p-1 space-y-4">
+						<For each={messages()}>
+							{(message, i) => (
+								<div>
+									<ChatMessage
+										message={message}
+										formattedMessages={formattedMessages}
+										index={i()}
+									/>
+								</div>
+							)}
+						</For>
+					</StickToBottom.Content>
+				)}
+			</StickToBottom>
 			{/* Context indicator uses the actual Tab UI */}
 			<Show when={includeTabContext() && currentTabLabel()}>
 				<div class="px-3 pb-1 flex items-center gap-2 text-xs opacity-90">

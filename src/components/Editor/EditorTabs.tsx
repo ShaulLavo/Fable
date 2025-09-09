@@ -14,6 +14,9 @@ import { useFS } from '../../context/FsContext'
 import { getNode } from '../../service/FS.service'
 import { cn } from '../../utils/cn'
 import { TabChip } from '../ui/TabChip'
+import { ContextMenuItem, useContextMenu } from '../../context/ContextMenu'
+import { useOPFS } from '../../hooks/useOPFS'
+import { File, isFolder } from '../../types/FS.types'
 
 interface EditorTabsProps {
 	index: number
@@ -68,7 +71,9 @@ const Tab = ({
 }) => {
     const { openFiles, fs, currentPath, setCurrentNode, currentNode, tabs } =
 		useFS()
-	const isSelected = () => currentNode().path === file
+  const { showContextMenu } = useContextMenu()
+  const OPFS = useOPFS()
+  const isSelected = () => currentNode().path === file
 
 	let tabRef: HTMLDivElement = null!
 
@@ -103,6 +108,82 @@ const Tab = ({
 		})
 	}
 
+	const closeOthers = () => {
+		const keep = file
+		const toDelete = tabs().filter(p => p !== keep)
+		batch(() => {
+			for (const p of toDelete) openFiles.delete(p)
+			// keep current selection on this tab
+			const node = getNode(fs, keep) ?? fs
+			setCurrentNode(node)
+		})
+	}
+
+	const closeToRight = () => {
+		const i = tabIndex()
+		const toDelete = tabs().filter((_, idx) => idx > i)
+		batch(() => {
+			for (const p of toDelete) openFiles.delete(p)
+		})
+	}
+
+	const closeAll = () => {
+		batch(() => {
+			for (const p of tabs()) openFiles.delete(p)
+			setCurrentNode(fs)
+		})
+	}
+
+	const closeSaved = async () => {
+		const allTabs = tabs()
+		const savedSet = new Set<string>()
+		for (const p of allTabs) {
+			const node = getNode(fs, p)
+			if (!node) continue
+			if (isFolder(node)) continue
+			const content = openFiles.get(p) ?? ''
+			try {
+				const saved = await OPFS.getFile(node as File)
+				if ((saved ?? '') === content) savedSet.add(p)
+			} catch {}
+		}
+
+		if (savedSet.size === 0) return
+		const currentIdx = tabIndex()
+		const remaining = allTabs.filter(p => !savedSet.has(p))
+		const nextPath =
+			remaining.length === 0
+				? null
+				: remaining[Math.min(currentIdx, remaining.length - 1)]
+		batch(() => {
+			for (const p of savedSet) openFiles.delete(p)
+			if (nextPath) {
+				const node = getNode(fs, nextPath) ?? fs
+				setCurrentNode(node)
+			} else {
+				setCurrentNode(fs)
+			}
+		})
+	}
+
+	const copyPath = async () => {
+		try {
+			await navigator.clipboard.writeText(file)
+		} catch (e) {
+			console.error('Failed to copy path', e)
+		}
+	}
+
+	const contextMenu: ContextMenuItem[] = [
+		{ label: 'Close', action: () => onFileClose(new Event('close')) },
+		{ label: 'Close Others', action: closeOthers },
+		{ label: 'Close to the Right', action: closeToRight },
+		{ label: 'Close Saved', action: () => void closeSaved() },
+		{ label: 'Close All', action: closeAll },
+		undefined,
+		{ label: 'Copy Path', action: copyPath }
+	]
+
 	//  EditorState.toJSON/fromJSON save with tab data
 
 	return (
@@ -110,6 +191,8 @@ const Tab = ({
 			path={file}
 			selected={isSelected()}
 			ref={tabRef}
+			width={160}
+			onContextMenu={e => showContextMenu(e as unknown as MouseEvent, contextMenu)}
 			onClick={() => {
 				batch(() => {
 					const node = getNode(fs, file) ?? fs

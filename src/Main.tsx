@@ -23,7 +23,7 @@ import BinaryFileViewer from './components/BinaryFileViewer'
 import { EditorNav } from './components/Editor/EditorNav'
 import { EditorTabs } from './components/Editor/EditorTabs'
 import ImageViewer from './components/ImageViewer'
-import SearchPalette from './components/SeatchBar'
+import SearchPalette from './components/SearchBar'
 import { StatusBar } from './components/StatusBar'
 import { ResizableHandle, ResizablePanel } from './components/ui/Resizable'
 import { useFS } from './context/FsContext'
@@ -68,16 +68,20 @@ export function Main(props: MainProps) {
 					if (size.length !== 2) return
 					setHorizontalPanelSize(size)
 				}}
-				class="w-full h-lvh flex"
+				class="w-full  flex "
 				style={{
 					'background-color': currentBackground(),
-					color: secondaryColor()
+					color: secondaryColor(),
+					height: isStatusBar()
+						? window.innerHeight - 28 + 'px'
+						: window.innerHeight + 'px',
+					overflow: 'hidden'
 				}}
 				orientation="horizontal"
 				accessKey="horizontal"
 			>
 				<ResizablePanel
-					class="overflow-x-hidden border-none h-full"
+					class="overflow-x-hidden border-none h-full "
 					initialSize={horizontalPanelSize()?.[0]}
 					id="left-sidebar"
 					ref={setLeftContainer}
@@ -95,10 +99,9 @@ export function Main(props: MainProps) {
 					style={{ 'background-color': dragHandleColor(), width: '2px' }}
 				/>
 				<ResizablePanel
-					class="overflow-hidden h-lvh"
+					class="overflow-hidden"
 					initialSize={horizontalPanelSize()?.[1]}
 					id="right-sidebar"
-					style={{ height: '100vh' }}
 					ref={setRightContainer}
 				>
 					<Portal

@@ -242,6 +242,9 @@ export const useExtensions = (
 				userSelect: 'none',
 				fontSize: fontSize() + 'px'
 			},
+			'.cm-lineNumbers .cm-gutterElement': {
+				color: currentColor()
+			},
 			'.cm-gutterElement': {
 				display: 'flex',
 				alignItems: 'center',

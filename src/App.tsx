@@ -1,7 +1,7 @@
 import { createEffect, createSignal, Show } from 'solid-js'
 import { Dynamic } from 'solid-js/web'
 import { GlobalLoader } from './components/GlobalLoader'
-import SearchPalette from './components/SeatchBar'
+import SearchPalette from './components/SearchBar'
 import { StatusBar } from './components/StatusBar'
 import { initialTree } from './consts/tree'
 import { ContextMenu, useContextMenu } from './context/ContextMenu'
@@ -53,7 +53,10 @@ export default function App() {
 		>
 			<div
 				style={{
-					height: window.innerHeight - 28 + 'px'
+					height: isStatusBar()
+						? window.innerHeight - 28 + 'px'
+						: window.innerHeight + 'px',
+					overflow: 'hidden'
 				}}
 			>
 				<Main sidebarSide="left" />

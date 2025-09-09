@@ -2,6 +2,8 @@ import { defineConfig, ViteDevServer } from 'vite'
 import solidPlugin from 'vite-plugin-solid'
 import tailwindcss from '@tailwindcss/vite'
 import compileTime from 'vite-plugin-compile-time'
+import devServer from '@hono/vite-dev-server'
+import bunAdapter from '@hono/vite-dev-server/bun'
 const fullReloadAlways = {
 	name: 'full-reload-always',
 	handleHotUpdate({ server }: any) {
@@ -40,6 +42,10 @@ export default defineConfig({
 		compileTime(),
 		proxy(),
 		fullReloadAlways
+		// devServer({
+		// 	entry: 'src/server/index.ts',
+		// 	adapter: bunAdapter
+		// })
 	],
 	server: {
 		port: 8000,

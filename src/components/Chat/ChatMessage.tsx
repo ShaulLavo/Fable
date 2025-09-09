@@ -18,7 +18,7 @@ export function ChatMessage(props: ChatMessageProps) {
 					'max-w-[90%]': isUser()
 				})}
 				style={{
-					'background-color': secondaryBackground(),
+					// 'background-color': secondaryBackground(),
 					color: secondaryColor()
 				}}
 				innerHTML={props.formattedMessages[props.index]}

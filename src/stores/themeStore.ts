@@ -19,16 +19,14 @@ const [currentThemeName, setTheme] = makePersisted(
 const currentThemeSettings = () =>
 	themeSettings[currentThemeName() ?? 'mojo'] ?? themeSettings.poimandres
 const currentTheme = () => currentThemeSettings().theme
+const isDark = () => currentThemeSettings().mode === 'dark'
 const currentColor = () => currentThemeSettings().color
 
 const currentBackground = () => currentThemeSettings().background
-const secondaryBackground = () => getDarkerRgbColor(currentBackground(), 1, 0.8)
-const secondaryColor = () =>
-	isDark()
-		? getLighterRgbColor(currentColor(), 1, 0.5)
-		: getDarkerRgbColor(currentColor(), 1, 0.8)
+const secondaryBackground = () => currentBackground()
 
-const isDark = () => currentThemeSettings().mode === 'dark'
+const secondaryColor = () => currentColor()
+
 const bracketColors = () => currentThemeSettings().rainbowBracket
 const xTermTheme = () =>
 	currentThemeSettings().xTermTheme ?? {

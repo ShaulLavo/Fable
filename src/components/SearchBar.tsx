@@ -1,5 +1,5 @@
 import { createEffect, createSignal, For, on, onMount, Show } from 'solid-js'
-import { BsSearch } from 'solid-icons/bs'
+import { BsSearch, BsGear } from 'solid-icons/bs'
 import { useFS } from '../context/FsContext'
 import { collectItems, getNode } from '../service/FS.service'
 import {
@@ -12,6 +12,28 @@ import { Dynamic } from 'solid-js/web'
 import { isSearchBar, setIsSearchBar } from '../stores/appStateStore'
 import { autofocus } from '@solid-primitives/autofocus'
 import { isFolder } from '../types/FS.types'
+import { themeSettings } from '../consts/themeSettings'
+import { ThemeKey, setTheme, currentThemeName } from '../stores/themeStore'
+
+type FSItem = ReturnType<typeof collectItems> extends Array<infer T> ? T : never
+
+type CommandItem = {
+	name: string
+	path: string
+	type: 'command'
+	Icon: any
+	action: 'openThemeSelector'
+}
+
+type ThemeItem = {
+	name: string
+	path: string
+	type: 'theme'
+	Icon: any
+	key: ThemeKey
+}
+
+type SearchItem = FSItem | CommandItem | ThemeItem
 
 export default function SearchPalette() {
 	const { fs, setCurrentNode } = useFS()
@@ -39,26 +61,61 @@ export default function SearchPalette() {
 			})
 	const [searchQuery, setSearchQuery] = createSignal('')
 	const [selectedIndex, setSelectedIndex] = createSignal(0)
-	const [filteredItems, setFilteredItems] = createSignal(fileItems())
+	const [filteredItems, setFilteredItems] =
+		createSignal<SearchItem[]>(fileItems())
 	const [isKeyboardNavigating, setIsKeyboardNavigating] = createSignal(false) // New signal
+	const [mode, setMode] = createSignal<'search' | 'theme'>('search')
+	const [originalTheme, setOriginalTheme] = createSignal<ThemeKey | null>(null)
 	let list: HTMLDivElement = null!
 
 	createEffect(() => {
 		let query = searchQuery().toLowerCase().trim()
+		if (mode() === 'theme') {
+			const themes = Object.keys(themeSettings) as ThemeKey[]
+			const items = themes
+				.map(key => ({
+					name: key,
+					path: 'Theme',
+					type: 'theme' as const,
+					Icon: BsGear,
+					key
+				}))
+				.filter(t => !query || t.name.toLowerCase().includes(query))
+			setFilteredItems(items)
+			setSelectedIndex(items.length > 0 ? 0 : -1)
+			return
+		}
+
+		// search mode
+		let fsFiltered = fileItems()
+		let commands: CommandItem[] = []
 		if (!query) {
-			setFilteredItems(fileItems())
+			// empty query shows filesystem only
+			setFilteredItems(fsFiltered)
 		} else {
-			let filtered = fileItems()
-			if (query.startsWith('folder:')) {
-				filtered = filtered.filter(item => item.type === 'folder')
-				query = query.slice(7).trim()
+			let q = query
+			if (q.startsWith('folder:')) {
+				fsFiltered = fsFiltered.filter(item => item.type === 'folder')
+				q = q.slice(7).trim()
 			}
-			filtered = filtered.filter(
+			// create commands when user types '>' or relates to theme
+			const wantsCommands = query.startsWith('>') || q.includes('theme')
+			if (wantsCommands) {
+				commands.push({
+					name: 'Set Theme…',
+					path: 'Command',
+					type: 'command',
+					Icon: BsGear,
+					action: 'openThemeSelector'
+				})
+			}
+			const filteredFs = fsFiltered.filter(
 				item =>
-					item.name.toLowerCase().includes(query) ||
-					item.path.toLowerCase().includes(query)
+					item.name.toLowerCase().includes(q) ||
+					item.path.toLowerCase().includes(q)
 			)
-			setFilteredItems(filtered)
+			const results: SearchItem[] = [...commands, ...filteredFs]
+			setFilteredItems(results)
 		}
 		setSelectedIndex(filteredItems().length > 0 ? 0 : -1)
 	})
@@ -89,6 +146,12 @@ export default function SearchPalette() {
 				break
 			case 'Escape':
 				e.preventDefault()
+				if (mode() === 'theme') {
+					const prev = originalTheme()
+					if (prev) setTheme(prev)
+					setMode('search')
+					setOriginalTheme(null)
+				}
 				setIsSearchBar(false)
 				break
 			case 'Backspace':
@@ -116,12 +179,40 @@ export default function SearchPalette() {
 		}
 	}
 
-	const handleSelect = (item: ReturnType<typeof fileItems>[0]) => {
-		const node = getNode(fs, item.path)
+	// Preview theme on keyboard navigation as selection changes in theme mode
+	createEffect(() => {
+		if (mode() !== 'theme') return
+		const idx = selectedIndex()
+		const item = filteredItems()[idx] as SearchItem | undefined
+		if (item && (item as any).type === 'theme') {
+			setTheme((item as ThemeItem).key)
+		}
+	})
+
+	const handleSelect = (item: SearchItem) => {
+		if ((item as any).type === 'command') {
+			const cmd = item as CommandItem
+			if (cmd.action === 'openThemeSelector') {
+				setMode('theme')
+				setOriginalTheme(currentThemeName())
+				setSearchQuery('')
+			}
+			return
+		}
+		if ((item as any).type === 'theme') {
+			const themeItem = item as ThemeItem
+			setTheme(themeItem.key)
+			setIsSearchBar(false)
+			setMode('search')
+			setOriginalTheme(null)
+			setSearchQuery('')
+			return
+		}
+		const node = getNode(fs, (item as FSItem).path)
 		if (isFolder(node)) {
 			setCurrentFolder(node)
 		} else {
-			setCurrentNode(getNode(fs, item.path) ?? fs)
+			setCurrentNode(getNode(fs, (item as FSItem).path) ?? fs)
 			setIsSearchBar(false)
 		}
 	}
@@ -130,6 +221,12 @@ export default function SearchPalette() {
 		if (!isKeyboardNavigating()) {
 			// Only set if not navigating with keyboard
 			setSelectedIndex(index)
+			if (mode() === 'theme') {
+				const item = filteredItems()[index] as SearchItem | undefined
+				if (item && (item as any).type === 'theme') {
+					setTheme((item as ThemeItem).key)
+				}
+			}
 		}
 	}
 
@@ -156,7 +253,18 @@ export default function SearchPalette() {
 	// })
 	return (
 		<Show when={isSearchBar()}>
-			<div class="fixed inset-0 bg-black/50 z-110"></div>
+			<div
+				class="fixed inset-0 bg-black/50 z-110"
+				onClick={() => {
+					if (mode() === 'theme') {
+						const prev = originalTheme()
+						if (prev) setTheme(prev)
+						setMode('search')
+						setOriginalTheme(null)
+					}
+					setIsSearchBar(false)
+				}}
+			></div>
 			<div class="fixed z-[120] inset-0 flex items-start justify-center pt-[10vh]">
 				<div
 					style={{
@@ -170,7 +278,11 @@ export default function SearchPalette() {
 						<BsSearch class="w-5 h-5 mr-3" />
 						<input
 							type="text"
-							placeholder="Search files (e.g. index.tsx, app.tsx)"
+							placeholder={
+								mode() === 'theme'
+									? 'Filter themes…'
+									: 'Search files or type > for commands'
+							}
 							value={searchQuery()}
 							onInput={e => setSearchQuery(e.currentTarget.value)}
 							onKeyDown={handleKeyDown}
@@ -213,7 +325,9 @@ export default function SearchPalette() {
 
 						<Show when={filteredItems().length === 0}>
 							<div class="px-4 py-3 text-gray-400 text-center">
-								No matching files found
+								{mode() === 'theme'
+									? 'No matching themes'
+									: 'No matching results'}
 							</div>
 						</Show>
 					</div>

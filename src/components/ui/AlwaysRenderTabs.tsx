@@ -27,7 +27,7 @@ export function Tabs(props: TabsProps) {
 	return (
 		<div class={`w-full h-full flex flex-col min-h-0 ${props.className || ''}`}>
 			<div class="flex flex-col shrink-0">
-				<div class="flex space-x-2 border-b border-gray-200 pb-1">
+				<div class="flex space-x-2  pb-1">
 					<For each={props.tabs}>
 						{tab => (
 							<button
@@ -35,8 +35,12 @@ export function Tabs(props: TabsProps) {
 								style={{
 									'background-color':
 										activeTabId() === tab.id
-											? secondaryBackground()
-											: currentBackground()
+											? currentBackground()
+											: secondaryBackground(),
+									'border-bottom':
+										activeTabId() === tab.id
+											? `2px solid ${currentColor()}`
+											: '2px solid transparent'
 								}}
 								onClick={() => setActiveTabId(tab.id)}
 								aria-selected={activeTabId() === tab.id}
@@ -47,8 +51,8 @@ export function Tabs(props: TabsProps) {
 									style={{
 										color:
 											activeTabId() === tab.id
-												? secondaryColor()
-												: currentColor()
+												? currentColor()
+												: secondaryColor()
 									}}
 								>
 									{tab.icon}
@@ -66,11 +70,7 @@ export function Tabs(props: TabsProps) {
 						<div
 							role="tabpanel"
 							aria-hidden={activeTabId() !== tab.id}
-							class={`${
-								activeTabId() === tab.id
-									? 'block h-full'
-									: 'hidden'
-							}`}
+							class={`${activeTabId() === tab.id ? 'block h-full' : 'hidden'}`}
 							style={{ height: '100%' }}
 						>
 							<div class="h-full flex flex-col min-h-0">{tab.content}</div>

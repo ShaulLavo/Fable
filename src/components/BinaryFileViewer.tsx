@@ -1,13 +1,6 @@
-import { file } from 'opfs-tools'
-import {
-	Component,
-	For,
-	Show,
-	createEffect,
-	createMemo,
-	createSignal,
-	onMount
-} from 'solid-js'
+import { VirtualList } from '@solid-primitives/virtual'
+import { Component, For, Show, createMemo, createSignal } from 'solid-js'
+import { Spinner, SpinnerType } from 'solid-spinner'
 import { useFS } from '../context/FsContext'
 import {
 	bracketColors,
@@ -15,9 +8,6 @@ import {
 	currentColor,
 	secondaryColor
 } from '../stores/themeStore'
-import { VirtualList } from '@solid-primitives/virtual'
-import { Spinner, SpinnerType } from 'solid-spinner'
-import { createElementBounds } from '@solid-primitives/bounds'
 
 const rowHeight = 24
 
