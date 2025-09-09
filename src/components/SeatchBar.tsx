@@ -1,4 +1,4 @@
-import { createEffect, createSignal, For, on, Show } from 'solid-js'
+import { createEffect, createSignal, For, on, onMount, Show } from 'solid-js'
 import { BsSearch } from 'solid-icons/bs'
 import { useFS } from '../context/FsContext'
 import { collectItems, getNode } from '../service/FS.service'
@@ -15,7 +15,7 @@ import { isFolder } from '../types/FS.types'
 
 export default function SearchPalette() {
 	const { fs, setCurrentNode } = useFS()
-
+	const [searchBar, setSearchBar] = createSignal<HTMLDivElement>(null!)
 	const [currentFolder, setCurrentFolder] = createSignal(fs)
 
 	const calculateDepth = (path: string) =>
@@ -117,7 +117,6 @@ export default function SearchPalette() {
 	}
 
 	const handleSelect = (item: ReturnType<typeof fileItems>[0]) => {
-		console.log('Selected:', item.path)
 		const node = getNode(fs, item.path)
 		if (isFolder(node)) {
 			setCurrentFolder(node)
@@ -142,9 +141,22 @@ export default function SearchPalette() {
 		return top
 	}
 
+	// onMount(() => {
+	// 	const onClick = (event: MouseEvent) => {
+	// 		const el = searchBar()
+	// 		if (!el) return
+	// 		if (el.contains(event.target as Node)) {
+	// 			console.log(' contains!')
+	// 			return
+	// 		}
+	// 		setIsSearchBar(false)
+	// 	}
+	// 	document.addEventListener('click', onClick)
+	// 	return () => document.removeEventListener('click', onClick)
+	// })
 	return (
 		<Show when={isSearchBar()}>
-			<div class="fixed inset-0 bg-black/50 z-50"></div>
+			<div class="fixed inset-0 bg-black/50 z-110"></div>
 			<div class="fixed z-[120] inset-0 flex items-start justify-center pt-[10vh]">
 				<div
 					style={{
@@ -152,6 +164,7 @@ export default function SearchPalette() {
 						'background-color': secondaryBackground()
 					}}
 					class="w-full max-w-2xl rounded-lg shadow-2xl overflow-hidden"
+					ref={setSearchBar}
 				>
 					<div class="flex items-center px-4 py-3 border-b border-gray-700">
 						<BsSearch class="w-5 h-5 mr-3" />

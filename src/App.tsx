@@ -1,11 +1,14 @@
 import { createEffect, createSignal, Show } from 'solid-js'
 import { Dynamic } from 'solid-js/web'
-import { Chat } from './components/Chat/Chat'
 import { GlobalLoader } from './components/GlobalLoader'
+import SearchPalette from './components/SeatchBar'
+import { StatusBar } from './components/StatusBar'
 import { initialTree } from './consts/tree'
 import { ContextMenu, useContextMenu } from './context/ContextMenu'
 import { FSProvider, isMock } from './context/FsContext'
+import { Main } from './Main'
 import { MockFsProvider } from './mocks/FsContext.mock'
+import { isStatusBar } from './stores/appStateStore'
 import { fontFamilyWithFallback } from './stores/fontStore'
 import {
 	baseFontSize,
@@ -14,10 +17,12 @@ import {
 	currentColor
 } from './stores/themeStore'
 import { setCSSVariable } from './utils/dom'
-import { Main } from './Main'
-import { isStatusBar } from './stores/appStateStore'
-import { StatusBar } from './components/StatusBar'
 // import './scripts/svgToCmp'
+
+//TODO PERFORMANCE :
+// TODO lazy load AI + move it to worker
+// TODO get rid of highlight js
+// TODO icons ? maybe lazy them 2?
 
 export default function App() {
 	const { hideContextMenu } = useContextMenu()
@@ -51,9 +56,8 @@ export default function App() {
 					height: window.innerHeight - 28 + 'px'
 				}}
 			>
-				<Chat>
-					<Main />
-				</Chat>
+				<Main sidebarSide="left" />
+				<SearchPalette />
 
 				<ContextMenu onClose={hideContextMenu} />
 				<GlobalLoader />

@@ -328,8 +328,9 @@ export const FSProvider: ParentComponent<{ initialTree?: Folder }> = props => {
 		const newNode = getNode(
 			fs,
 			newPath.startsWith('/') ? newPath.slice(1) : newPath
-		)
-		if (!newNode) return console.error('Failed to add node.', newPath)
+		)!
+		// node we just created has to exist
+		if (!newNode) console.error('Failed to add node.', newPath)
 		if (newNode.name === EMPTY_NODE_NAME) return
 		batch(() => {
 			if (isDir) {

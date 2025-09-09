@@ -31,8 +31,14 @@ import { useFileExtension } from './hooks/useFileExtension'
 import { fontFamilyWithFallback } from './stores/fontStore'
 import { BASE_ICONS } from './stores/icons'
 import { cn } from './utils/cn'
+import { Tabs } from './components/ui/AlwaysRenderTabs'
+import { Chat } from './components/Chat/Chat'
 
-export function Main() {
+export interface MainProps {
+	sidebarSide?: 'left' | 'right'
+}
+
+export function Main(props: MainProps) {
 	const [editorContainer, setEditorContainer] = createSignal<HTMLDivElement>(
 		null!
 	)
@@ -40,19 +46,29 @@ export function Main() {
 		null!
 	)
 	const [leftContainer, setLeftContainer] = createSignal<HTMLDivElement>(null!)
-
+	const tabs = [
+		{
+			id: '1',
+			icon: <Dynamic component={BASE_ICONS.file} />,
+			label: 'EXPLORER',
+			content: <FileSystem />
+		},
+		{
+			id: '2',
+			icon: <Dynamic class="h-full" component={BASE_ICONS.chat} />,
+			label: 'CHAT',
+			content: <Chat />
+		}
+	]
 	return (
 		<div style={{ 'font-family': fontFamilyWithFallback() }}>
-			<SearchPalette />
-
 			<Resizable
 				sizes={horizontalPanelSize()}
 				onSizesChange={size => {
 					if (size.length !== 2) return
-					if (size[0] === 0.5 && size[1] === 0.5) return
 					setHorizontalPanelSize(size)
 				}}
-				class="w-full flex"
+				class="w-full h-lvh flex"
 				style={{
 					'background-color': currentBackground(),
 					color: secondaryColor()
@@ -65,23 +81,18 @@ export function Main() {
 					initialSize={horizontalPanelSize()?.[0]}
 					id="left-sidebar"
 					ref={setLeftContainer}
-					collapsible
 				>
 					<Portal
 						mount={
-							mainSideBarPosition() === 'left'
-								? leftContainer()
-								: rightContainer()
+							props.sidebarSide === 'left' ? leftContainer() : rightContainer()
 						}
+						ref={ref => (ref.style.height = '100%')}
 					>
-						<FileSystem />
+						<Tabs tabs={tabs} />
 					</Portal>
 				</ResizablePanel>
 				<ResizableHandle
-					style={{
-						'background-color': dragHandleColor(),
-						width: '2px'
-					}}
+					style={{ 'background-color': dragHandleColor(), width: '2px' }}
 				/>
 				<ResizablePanel
 					class="overflow-hidden h-lvh"
@@ -92,9 +103,7 @@ export function Main() {
 				>
 					<Portal
 						mount={
-							mainSideBarPosition() === 'left'
-								? rightContainer()
-								: leftContainer()
+							props.sidebarSide === 'left' ? rightContainer() : leftContainer()
 						}
 					>
 						<EditorLayout />

@@ -1,17 +1,19 @@
 import hljs from 'highlight.js'
 import { Marked } from 'marked'
 import { markedHighlight } from 'marked-highlight'
-import { batch, createSignal, onMount } from 'solid-js'
+import { batch, createMemo, createSignal, onMount } from 'solid-js'
 import { createStore } from 'solid-js/store'
 import { Message } from './Chat'
 import ChatApi from './ChatApi'
+import { useFS } from '../../context/FsContext'
+import { useCurrentFile } from '../../hooks/useCurrentFile'
+import { useFileExtension } from '../../hooks/useFileExtension'
 
 const marked = new Marked(
 	markedHighlight({
 		emptyLangClass: 'hljs',
 		langPrefix: 'hljs language-',
 		highlight(code, lang, info) {
-			console.log(lang, info)
 			const language = hljs.getLanguage(lang) ? lang : 'plaintext'
 			return hljs.highlight(code, { language }).value
 		}
@@ -22,6 +24,10 @@ export async function formatChatMessage(message: string): Promise<string> {
 	return await marked.parse(message)
 }
 export function useChat(api: ChatApi) {
+    const { openFiles, currentFile } = useFS()
+    const { currentFileContent } = useCurrentFile(currentFile, openFiles)
+    const { currentExtension } = useFileExtension()
+
 	const [messages, setMessages] = createSignal<Message[]>([
 		{ id: 1, content: 'Hello! How can I help you today?', role: 'assistant' }
 	])
@@ -45,10 +51,22 @@ export function useChat(api: ChatApi) {
 
 	const [isLoading, setIsLoading] = createSignal(true)
 	const [inputValue, setInputValue] = createSignal('')
+    const [includeTabContext, setIncludeTabContext] = createSignal(true)
+
+    const currentTabLabel = createMemo(() => currentFile()?.path || '')
+
+    const buildSystemContext = () => {
+        const file = currentFile()
+        if (!file) return ''
+        const code = currentFileContent() || ''
+        const max = 2000
+        const snippet = code.length > max ? code.slice(-max) : code
+        const ext = currentExtension()
+        return `You are a helpful coding assistant. Use the following current tab as primary context for your response when relevant.\nCurrent tab: ${file.path}\nContent:\n\n\`\`\`${ext || ''}\n${snippet}\n\`\`\``
+    }
 
 	const initChat = async () => {
 		await api.asyncInitChat((kind, text) => {
-			console.log({ kind, text })
 			if (!text.trim()) return
 			setMessageAt(
 				{
@@ -101,7 +119,8 @@ export function useChat(api: ChatApi) {
 					messages().length - 1
 				)
 			},
-			console.log
+			console.log,
+			includeTabContext() ? { system: buildSystemContext() } : undefined
 		)
 	}
 
@@ -113,6 +132,9 @@ export function useChat(api: ChatApi) {
 		setInputValue,
 		sendMessage,
 		isLoading,
-		formattedMessages
+		formattedMessages,
+		includeTabContext,
+		setIncludeTabContext,
+		currentTabLabel
 	}
 }

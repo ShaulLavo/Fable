@@ -1,4 +1,3 @@
-import { VsClose } from 'solid-icons/vs'
 import {
 	Accessor,
 	For,
@@ -11,13 +10,10 @@ import {
 } from 'solid-js'
 
 import { createEventListener } from '@solid-primitives/event-listener'
-import { Dynamic } from 'solid-js/web'
 import { useFS } from '../../context/FsContext'
 import { getNode } from '../../service/FS.service'
-import { getNodeIcon } from '../../stores/icons'
-import { currentColor } from '../../stores/themeStore'
 import { cn } from '../../utils/cn'
-import { Span } from '../ui/Span'
+import { TabChip } from '../ui/TabChip'
 
 interface EditorTabsProps {
 	index: number
@@ -70,9 +66,8 @@ const Tab = ({
 	tabIndex: Accessor<number>
 	index: number
 }) => {
-	const { openFiles, fs, currentPath, setCurrentNode, currentNode, tabs } =
+    const { openFiles, fs, currentPath, setCurrentNode, currentNode, tabs } =
 		useFS()
-	const [isHovered, setIsHovered] = createSignal(false)
 	const isSelected = () => currentNode().path === file
 
 	let tabRef: HTMLDivElement = null!
@@ -111,42 +106,17 @@ const Tab = ({
 	//  EditorState.toJSON/fromJSON save with tab data
 
 	return (
-		<Span
+		<TabChip
+			path={file}
 			selected={isSelected()}
-			title={file}
 			ref={tabRef}
-			onMouseOver={() => setIsHovered(true)}
-			onMouseOut={() => setIsHovered(false)}
 			onClick={() => {
 				batch(() => {
 					const node = getNode(fs, file) ?? fs
 					setCurrentNode(node)
 				})
 			}}
-			class={cn(
-				`px-1.5 py-1.5 focus:outline-none text-xs items-center flex cursor-pointer relative z-50 box-border border-t-1`
-			)}
-			style={{
-				'border-color': isSelected() ? currentColor() : 'transparent'
-			}}
-			data-value={file}
-			role="button"
-		>
-			<Dynamic component={getNodeIcon(getNode(fs, file)!)} size={14} />
-			<span class="px-1" />
-
-			{file.split('/').pop()}
-
-			<button
-				onClick={onFileClose}
-				class="pl-2 flex items-center justify-center"
-				style={{
-					visibility: isHovered() || isSelected() ? 'visible' : 'hidden',
-					'padding-top': '1.5px'
-				}}
-			>
-				<VsClose size={16} color={currentColor()} />
-			</button>
-		</Span>
+			onClose={onFileClose}
+		/>
 	)
 }

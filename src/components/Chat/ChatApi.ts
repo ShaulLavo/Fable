@@ -24,13 +24,14 @@ export default class ChatApi {
 	async onGenerate(
 		prompt: string,
 		messageUpdate: (kind: string, text: string, append: boolean) => void,
-		setRuntimeStats: (runtimeStats: string) => void
+		setRuntimeStats: (runtimeStats: string) => void,
+		options?: { system?: string }
 	) {
 		if (this.requestInProgress) {
 			return
 		}
 		this.pushTask(async () => {
-			await this.asyncGenerate(prompt, messageUpdate, setRuntimeStats)
+			await this.asyncGenerate(prompt, messageUpdate, setRuntimeStats, options)
 		})
 		return this.chatRequestChain
 	}
@@ -58,8 +59,6 @@ export default class ChatApi {
 		}
 		this.engine.setInitProgressCallback(initProgressCallback)
 
-		console.log(`Initializing model: ${this.selectedModel}`)
-
 		try {
 			await this.engine.reload(this.selectedModel)
 		} catch (err: unknown) {
@@ -86,7 +85,8 @@ export default class ChatApi {
 	private async asyncGenerate(
 		prompt: string,
 		messageUpdate: (kind: string, text: string, append: boolean) => void,
-		setRuntimeStats: (runtimeStats: string) => void
+		setRuntimeStats: (runtimeStats: string) => void,
+		options?: { system?: string }
 	) {
 		await this.asyncInitChat(messageUpdate)
 		this.requestInProgress = true
@@ -103,9 +103,14 @@ export default class ChatApi {
 			this.chatHistory.push({ role: 'user', content: prompt })
 			let curMessage = ''
 			let usage: CompletionUsage | undefined = undefined
+			const messages = (
+				options?.system
+					? [{ role: 'system', content: options.system } as ChatCompletionMessageParam]
+					: []
+			).concat(this.chatHistory)
 			const completion = await this.engine.chat.completions.create({
 				stream: true,
-				messages: this.chatHistory,
+				messages,
 				stream_options: { include_usage: true }
 			})
 			for await (const chunk of completion) {
@@ -135,5 +140,26 @@ export default class ChatApi {
 			await this.unloadChat()
 		}
 		this.requestInProgress = false
+	}
+
+	/**
+	 * Get a one-off suggestion without affecting chat history.
+	 * Useful for editor inline completions.
+	 */
+	async suggest(prompt: string): Promise<string> {
+		await this.asyncInitChat(() => {})
+		try {
+			const completion = await this.engine.chat.completions.create({
+				stream: false,
+				messages: [{ role: 'user', content: prompt }]
+			})
+			const choice: any = completion.choices?.[0]
+			// Web-LLM returns message.content for non-streaming responses
+			const content = choice?.message?.content ?? ''
+			return typeof content === 'string' ? content : ''
+		} catch (err) {
+			console.error('LLM suggest error:', err)
+			return ''
+		}
 	}
 }

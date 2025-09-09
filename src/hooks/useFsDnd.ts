@@ -15,7 +15,7 @@ const setDraggedOverNode = (node: FSNode | null) => {
 }
 
 export const useFsDnd = (node: FSNode) => {
-	const { moveNode, setIsOpen, addNode, fs } = useFS()
+	const { moveNode, setIsOpen, addNode, fs, setCurrentNode } = useFS()
 	const { write } = useOPFS()
 
 	const handleFileEntry = async (
@@ -26,8 +26,11 @@ export const useFsDnd = (node: FSNode) => {
 		entry.file(async file => {
 			const path = `${toPath}/${file.name}`
 			await write(path, file.stream())
-			addNode({ parent: getFolder(fs, toPath) ?? fs, name: file.name })
-			// TODO set current path
+			const node = addNode({
+				parent: getFolder(fs, toPath) ?? fs,
+				name: file.name
+			})
+			if (node) setCurrentNode(node)
 		})
 	}
 

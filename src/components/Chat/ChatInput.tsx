@@ -40,7 +40,7 @@ export function ChatInput(props: ChatInputProps) {
 
 	return (
 		<div
-			class="border-t p-3"
+			class="border-t p-3 shrink-0"
 			style={{
 				'border-color': dragHandleColor()
 			}}

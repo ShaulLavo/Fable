@@ -1,0 +1,83 @@
+import { createSignal, For, JSX } from 'solid-js'
+import {
+	currentBackground,
+	currentColor,
+	secondaryBackground,
+	secondaryColor
+} from '../../stores/themeStore'
+
+type Tab = {
+	id: string
+	icon: JSX.Element
+	label: string
+	content: JSX.Element
+}
+
+type TabsProps = {
+	tabs: Tab[]
+	defaultTabId?: string
+	className?: string
+}
+
+export function Tabs(props: TabsProps) {
+	const [activeTabId, setActiveTabId] = createSignal(
+		props.defaultTabId || props.tabs[0]?.id
+	)
+	const currentTab = () => props.tabs.find(tab => tab.id === activeTabId())
+	return (
+		<div class={`w-full h-full flex flex-col min-h-0 ${props.className || ''}`}>
+			<div class="flex flex-col shrink-0">
+				<div class="flex space-x-2 border-b border-gray-200 pb-1">
+					<For each={props.tabs}>
+						{tab => (
+							<button
+								class={`flex flex-col items-center px-3 py-2 rounded-t-lg transition-colors duration-200`}
+								style={{
+									'background-color':
+										activeTabId() === tab.id
+											? secondaryBackground()
+											: currentBackground()
+								}}
+								onClick={() => setActiveTabId(tab.id)}
+								aria-selected={activeTabId() === tab.id}
+								role="tab"
+							>
+								<div
+									class={`text-xl mb-1`}
+									style={{
+										color:
+											activeTabId() === tab.id
+												? secondaryColor()
+												: currentColor()
+									}}
+								>
+									{tab.icon}
+								</div>
+							</button>
+						)}
+					</For>
+				</div>
+				<div class="text-xs font-medium">{currentTab()?.label}</div>
+			</div>
+
+			<div class="flex-1 min-h-0 overflow-hidden">
+				<For each={props.tabs}>
+					{tab => (
+						<div
+							role="tabpanel"
+							aria-hidden={activeTabId() !== tab.id}
+							class={`${
+								activeTabId() === tab.id
+									? 'block h-full'
+									: 'hidden'
+							}`}
+							style={{ height: '100%' }}
+						>
+							<div class="h-full flex flex-col min-h-0">{tab.content}</div>
+						</div>
+					)}
+				</For>
+			</div>
+		</div>
+	)
+}

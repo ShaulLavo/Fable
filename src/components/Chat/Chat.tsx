@@ -1,10 +1,4 @@
-import {
-	AppConfig,
-	MLCEngine,
-	modelLibURLPrefix,
-	modelVersion
-} from '@mlc-ai/web-llm'
-import { For, ParentComponent, Show } from 'solid-js'
+import { children, For, ParentComponent, Show } from 'solid-js'
 import ChatApi from './ChatApi'
 import { ChatInput } from './ChatInput'
 import { ChatLayout } from './ChatLayout'
@@ -21,6 +15,10 @@ import { Dynamic } from 'solid-js/web'
 import { Loader } from '../GlobalLoader'
 import { isStatusBar } from '../../stores/appStateStore'
 import { cn } from '../../utils/cn'
+import { getChatApi } from '../../stores/llmStore'
+import { TabChip } from '../ui/TabChip'
+import { useFS } from '../../context/FsContext'
+import { getNode } from '../../service/FS.service'
 
 export type Message = {
 	id: number
@@ -28,57 +26,40 @@ export type Message = {
 	role: 'user' | 'assistant'
 }
 
-const appConfig: AppConfig = {
-	model_list: [
-		{
-			model: 'https://huggingface.co/mlc-ai/Qwen2.5-1.5B-Instruct-q4f32_1-MLC',
-			model_id: 'Qwen2.5-1.5B-Instruct-q4f32_1-MLC',
-			model_lib:
-				modelLibURLPrefix +
-				modelVersion +
-				'/Qwen2-1.5B-Instruct-q4f32_1-ctx4k_cs1k-webgpu.wasm'
-		}
-	]
-}
-export const Chat: ParentComponent = props => {
-	const api = new ChatApi(
-		new MLCEngine({ appConfig }),
-		appConfig.model_list[0].model_id
-	)
+export const Chat = () => {
+	const api = getChatApi()
+	const { fs, setCurrentNode } = useFS()
 	const {
 		messages,
 		inputValue,
 		setInputValue,
 		sendMessage,
 		isLoading,
-		formattedMessages
+		formattedMessages,
+		includeTabContext,
+		setIncludeTabContext,
+		currentTabLabel
 	} = useChat(api)
 
-	const chatContent = (
+	return (
 		<div
-			class={cn('flex flex-col h-full relative flex-1', {
-				// 'pb-6': isStatusBar()
-			})}
-			style={{
-				'background-color': currentBackground()
-			}}
+			class={cn('flex flex-col h-full min-h-0 relative flex-1', {})}
+			style={{ 'background-color': currentBackground() }}
 		>
 			<Loader
 				class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
 				show={isLoading()}
 			/>
 			<div
-				class="p-3 flex justify-between items-center border-b "
-				style={{
-					'border-color': dragHandleColor()
-				}}
+				class="p-3 flex justify-between items-center border-b shrink-0"
+				style={{ 'border-color': dragHandleColor() }}
 			>
 				<h2 class="font-bold flex items-center">
 					<Dynamic component={BASE_ICONS.chat} />
 					&nbsp; Chat
 				</h2>
 			</div>
-			<div class="flex-1 overflow-y-auto p-1 space-y-4">
+			<div class="flex-1 min-h-0 overflow-y-auto p-1 space-y-4">
 				<For each={messages()}>
 					{(message, i) => (
 						<div>
@@ -91,6 +72,21 @@ export const Chat: ParentComponent = props => {
 					)}
 				</For>
 			</div>
+			{/* Context indicator uses the actual Tab UI */}
+			<Show when={includeTabContext() && currentTabLabel()}>
+				<div class="px-3 pb-1 flex items-center gap-2 text-xs opacity-90">
+					<TabChip
+						path={currentTabLabel()!}
+						selected={false}
+						onClose={() => setIncludeTabContext(false)}
+						onClick={() => {
+							const node = getNode(fs, currentTabLabel()!) ?? fs
+							setCurrentNode(node)
+						}}
+					/>
+				</div>
+			</Show>
+
 			<ChatInput
 				value={inputValue()}
 				onInput={e => setInputValue(e.target.value)}
@@ -98,6 +94,4 @@ export const Chat: ParentComponent = props => {
 			/>
 		</div>
 	)
-
-	return <ChatLayout chat={chatContent}>{props.children}</ChatLayout>
 }

@@ -19,6 +19,8 @@ import { useFS } from '../../context/FsContext'
 import { useCurrentFile } from '../../hooks/useCurrentFile'
 import { useFileExtension } from '../../hooks/useFileExtension'
 import { useExtensions } from './useExtensions'
+import { inlineSuggestion } from 'codemirror-extension-inline-suggestion'
+import { llmSuggest } from '../../stores/llmStore'
 
 export interface EditorProps {
 	defaultTheme?: ThemeKey
@@ -40,6 +42,27 @@ export const Editor = ({
 
 	const baseExtensions = useExtensions(index, editorView)
 
+	// Inline suggestion fetcher using the global LLM
+	const fetchSuggestion = async (state: EditorState) => {
+		try {
+			const pos = state.selection.main.head
+			const before = state.sliceDoc(Math.max(0, pos - 2000), pos)
+			const after = state.sliceDoc(pos, Math.min(state.doc.length, pos + 400))
+			const prompt =
+				'You are a code completion engine. Suggest the next short insertion to help complete the code at the cursor. Respond with only the suggested text, no explanations.' +
+				"\n<before>\n" +
+				before +
+				"\n</before>\n<after>\n" +
+				after +
+				"\n</after>\nSuggestion:"
+			const suggestion = await llmSuggest(prompt)
+			return (suggestion || '').trim()
+		} catch (e) {
+			console.error('inline suggestion error', e)
+			return ''
+		}
+	}
+
 	const setupEditor = () => {
 		const view = new EditorView({
 			parent: editorRefs[index],
@@ -59,7 +82,10 @@ export const Editor = ({
 		})
 		const editorState = EditorState.create({
 			doc: code(),
-			extensions: baseExtensions
+			extensions: [
+				...baseExtensions,
+				inlineSuggestion({ fetchFn: fetchSuggestion, delay: 1000 })
+			]
 		})
 
 		view.setState(editorState)

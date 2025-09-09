@@ -112,7 +112,7 @@ export function ContextMenu(props: ContextMenuProps) {
 	const [menuElement, setMenuElement] = createSignal<HTMLDivElement | null>(
 		null
 	)
-	const bounds = createElementBounds(menuElement)
+	// const bounds = createElementBounds(menuElement)
 
 	createEffect(() => {
 		const handleOutsideClick = (e: MouseEvent) => {
