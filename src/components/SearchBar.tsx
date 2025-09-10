@@ -184,7 +184,7 @@ export default function SearchPalette() {
 		if (mode() !== 'theme') return
 		const idx = selectedIndex()
 		const item = filteredItems()[idx] as SearchItem | undefined
-		if (item && (item as any).type === 'theme') {
+		if (item && item.type === 'theme') {
 			setTheme((item as ThemeItem).key)
 		}
 	})
@@ -223,7 +223,7 @@ export default function SearchPalette() {
 			setSelectedIndex(index)
 			if (mode() === 'theme') {
 				const item = filteredItems()[index] as SearchItem | undefined
-				if (item && (item as any).type === 'theme') {
+				if (item && item.type === 'theme') {
 					setTheme((item as ThemeItem).key)
 				}
 			}

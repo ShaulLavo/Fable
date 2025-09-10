@@ -1,8 +1,8 @@
-import { createEffect, createSignal, Show } from 'solid-js'
+import { createEffect, createSignal, Show, lazy, onMount } from 'solid-js'
 import { Dynamic } from 'solid-js/web'
 import { GlobalLoader } from './components/GlobalLoader'
 import SearchPalette from './components/SearchBar'
-import { StatusBar } from './components/StatusBar'
+
 import { initialTree } from './consts/tree'
 import { ContextMenu, useContextMenu } from './context/ContextMenu'
 import { FSProvider, isMock } from './context/FsContext'
@@ -18,8 +18,9 @@ import {
 } from './stores/themeStore'
 import { setCSSVariable } from './utils/dom'
 // import './scripts/svgToCmp'
-import { TerminalProvider } from './context/TerminalContext'
 import { Toaster } from 'solid-sonner'
+import { ConfirmDialogHost } from './components/ui/ConfirmDialog'
+import { StatusBar } from './components/StatusBar'
 
 //TODO PERFORMANCE :
 // TODO lazy load AI + move it to worker
@@ -53,26 +54,25 @@ export default function App() {
 			component={isMock ? MockFsProvider : FSProvider}
 			initialTree={initialTree}
 		>
-			<TerminalProvider>
-				<div
-						style={{
-							height: isStatusBar()
-								? window.innerHeight - 28 + 'px'
-								: window.innerHeight + 'px',
-							overflow: 'hidden'
-						}}
-					>
-						<Main sidebarSide="left" />
-						<SearchPalette />
+			<div
+				style={{
+					height: isStatusBar()
+						? window.innerHeight - 28 + 'px'
+						: window.innerHeight + 'px',
+					overflow: 'hidden'
+				}}
+			>
+				<Main sidebarSide="left" />
+				<SearchPalette />
+				<ConfirmDialogHost />
 
-						<ContextMenu onClose={hideContextMenu} />
-						<GlobalLoader />
-						<Toaster />
-					</div>
-					<Show when={isStatusBar()}>
-						<StatusBar ref={setStatusBarRef} />
-					</Show>
-			</TerminalProvider>
+				<ContextMenu onClose={hideContextMenu} />
+				<GlobalLoader />
+				<Toaster />
+			</div>
+			<Show when={isStatusBar()}>
+				<StatusBar ref={setStatusBarRef} />
+			</Show>
 		</Dynamic>
 	)
 }

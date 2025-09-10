@@ -1,37 +1,33 @@
-import {
-	AppConfig,
-	MLCEngine,
-	MLCEngineInterface,
-	modelLibURLPrefix,
-	modelVersion
-} from '@mlc-ai/web-llm'
+import type { MLCEngineInterface } from '@mlc-ai/web-llm'
 import { createSignal, createMemo } from 'solid-js'
 import { makePersisted } from '@solid-primitives/storage'
 import { dualStorage } from '../utils/DualStorage'
-import ChatApi, { DEFAULT_MODEL } from '../components/Chat/ChatApi'
 
-// Centralized LLM config and singletons
-export const appConfig: AppConfig = {
-	model_list: [
-		{
-			model: 'https://huggingface.co/mlc-ai/Qwen2.5-1.5B-Instruct-q4f32_1-MLC',
-			model_id: 'Qwen2.5-1.5B-Instruct-q4f32_1-MLC',
-			model_lib:
-				modelLibURLPrefix +
-				modelVersion +
-				'/Qwen2-1.5B-Instruct-q4f32_1-ctx4k_cs1k-webgpu.wasm'
-		}
-	]
+// Centralized LLM config and singletons (lazy)
+const DEFAULT_LOCAL_MODEL_ID = 'Qwen2.5-1.5B-Instruct-q4f32_1-MLC'
+const DEFAULT_VERCEL_MODEL_ID = 'gpt-5'
+
+let enginePromise: Promise<MLCEngineInterface> | null = null
+
+async function createEngine(): Promise<MLCEngineInterface> {
+  const { MLCEngine, modelLibURLPrefix, modelVersion } = await import('@mlc-ai/web-llm')
+  const appConfig = {
+    model_list: [
+      {
+        model: 'https://huggingface.co/mlc-ai/Qwen2.5-1.5B-Instruct-q4f32_1-MLC',
+        model_id: DEFAULT_LOCAL_MODEL_ID,
+        model_lib: modelLibURLPrefix + modelVersion + '/Qwen2-1.5B-Instruct-q4f32_1-ctx4k_cs1k-webgpu.wasm'
+      }
+    ]
+  }
+  return new MLCEngine({ appConfig })
 }
 
-let engine: MLCEngineInterface | null = null
-let api: ChatApi | null = null
-
-export function getEngine(): MLCEngineInterface {
-	if (!engine) {
-		engine = new MLCEngine({ appConfig })
-	}
-	return engine
+export function getEngine(): Promise<MLCEngineInterface> {
+  if (!enginePromise) {
+    enginePromise = createEngine()
+  }
+  return enginePromise
 }
 
 // Provider selection: 'local' (MLC) or 'vercel' (AI SDK Gateway)
@@ -43,56 +39,39 @@ export const [provider, setProvider] = makePersisted(
 )
 
 // Selected model ids for each provider
-const defaultLocalModelId = appConfig.model_list[0].model_id
 export const [localModelId, setLocalModelId] = makePersisted(
-	createSignal<string>(defaultLocalModelId),
+	createSignal<string>(DEFAULT_LOCAL_MODEL_ID),
 	{ name: 'localModelId', storage: dualStorage }
 )
 
 export const [vercelModelId, setVercelModelId] = makePersisted(
-	createSignal<string>(DEFAULT_MODEL),
+	createSignal<string>(DEFAULT_VERCEL_MODEL_ID),
 	{ name: 'vercelModelId', storage: dualStorage }
 )
 
 export const localModels = createMemo(() =>
-	appConfig.model_list.map(m => ({ id: m.model_id, name: m.model_id }))
+	[{ id: DEFAULT_LOCAL_MODEL_ID, name: DEFAULT_LOCAL_MODEL_ID }]
 )
-
-export function getChatApi(): ChatApi {
-	if (!api) {
-		// Initialize API based on current provider selection
-		if (provider() === 'vercel') {
-			api = new ChatApi(getEngine(), vercelModelId(), 'vercel')
-		} else {
-			api = new ChatApi(getEngine(), localModelId(), 'local')
-		}
-	}
-	return api
-}
 
 // Update the active local model in the running engine-backed API
 export function setActiveLocalModel(id: string) {
 	setLocalModelId(id)
-	// Recreate API to switch models
-	api = new ChatApi(getEngine(), id, 'local')
 }
 
 export function setActiveVercelModel(id: string) {
 	setVercelModelId(id)
-	api = new ChatApi(getEngine(), id, 'vercel')
 }
 
 export function setActiveProvider(next: LlmProvider) {
 	setProvider(next)
-	if (next === 'vercel') {
-		api = new ChatApi(getEngine(), vercelModelId(), 'vercel')
-	} else {
-		api = new ChatApi(getEngine(), localModelId(), 'local')
-	}
 }
 
 // Helper to get a simple suggestion from the global LLM
 export async function llmSuggest(prompt: string): Promise<string> {
-	const chat = getChatApi()
-	return chat.suggest(prompt)
+  const [{ default: ChatApi }] = await Promise.all([
+    import('../components/Chat/ChatApi')
+  ])
+  const engine = await getEngine()
+  const api = new ChatApi(engine, provider() === 'vercel' ? vercelModelId() : localModelId(), provider())
+  return api.suggest(prompt)
 }

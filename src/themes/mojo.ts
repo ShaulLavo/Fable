@@ -79,8 +79,7 @@ export const xTermMojoTheme = {
 	brightBlue: '#007ACC', // editor.selectionBackground
 	brightMagenta: '#ADD6FF', // editor.selectionHighlightBackground
 	brightCyan: '#41a6d9', // editorLineNumber.activeForeground
-	brightWhite: '#A6A6A6', // activityBar.foreground
-	extendedAnsi: ['#292929'] // editorRuler.foreground (approximation)
+	brightWhite: '#A6A6A6' // activityBar.foreground
 } as const
 
 export const mojoBracketColors = {

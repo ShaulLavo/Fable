@@ -64,7 +64,7 @@ import { BASE_ICONS } from '../../stores/icons'
 import { createColorCycler } from '../../utils/color'
 import { autoHide } from '../../utils/dom'
 import { createKeymap } from '../../utils/keymap'
-import { markDirty } from '../../stores/dirtyStore'
+import { updateDirtyForPath } from '../../stores/dirtyStore'
 import { ProgrammaticChange } from '../../hooks/controlledValue'
 import { viewTransition } from '../../utils/viewTransition'
 import { useSetCode } from './useSetCode'
@@ -132,7 +132,7 @@ export const useExtensions = (
                   tr => tr.annotation(ProgrammaticChange) === true
                 )
                 if (!isProgrammatic) {
-                  markDirty(currentFilePath())
+                  updateDirtyForPath(currentFilePath(), newText)
                 }
             }
         }),

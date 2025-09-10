@@ -28,6 +28,7 @@ import {
 	sortTreeInDraft
 } from '../service/FS.service'
 import { rootName, setIsFsLoading } from '../stores/appStateStore'
+import { setBaseline } from '../stores/dirtyStore'
 import { editorMounted, setStart, start } from '../stores/editorStore'
 import { File, Folder, FSNode, isFolder } from '../types/FS.types'
 import { cappedSetItem } from '../utils/storage'
@@ -189,6 +190,7 @@ export const FSProvider: ParentComponent<{ initialTree?: Folder }> = props => {
 						.filter(p => !!p)
 						.forEach(({ path, content }) => {
 							openFiles.set(path, content)
+							setBaseline(path, content)
 						})
 				}
 				console.info(
@@ -256,10 +258,11 @@ export const FSProvider: ParentComponent<{ initialTree?: Folder }> = props => {
 				const size = await opfsNode.getSize()
 				setCurrentFileSize(size)
 				if (size <= LOCAL_STORAGE_CAP) {
-					const content = await opfsNode.text()
-					openFiles.set(file.path, content)
-					return
-				}
+						const content = await opfsNode.text()
+						openFiles.set(file.path, content)
+						setBaseline(file.path, content)
+						return
+					}
 			}
             const chunk = await OPFS.getFileInChunks(file, LOCAL_STORAGE_CAP)
             if (!chunk) return
@@ -267,6 +270,7 @@ export const FSProvider: ParentComponent<{ initialTree?: Folder }> = props => {
                 const { value, done } = await chunk.next()
                 if (done) return
                 openFiles.set(file.path, value)
+                setBaseline(file.path, value)
             } finally {
                 // Explicitly close the stream to avoid OPFS locks
                 try {

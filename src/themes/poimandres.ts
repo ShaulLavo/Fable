@@ -189,7 +189,5 @@ export const xTermPoimandresTheme = {
 	brightBlue: baseColors.lightBlue,
 	brightMagenta: baseColors.pink,
 	brightCyan: baseColors.brightMint,
-	brightWhite: baseColors.white,
-
-	extendedAnsi: [baseColors.bluishGrayBrighter]
+	brightWhite: baseColors.white
 }

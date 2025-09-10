@@ -40,14 +40,17 @@ const proxy = () => ({
 })
 const { default: stdLibBrowser } = await import('node-stdlib-browser')
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const ourFs = path.resolve(__dirname, 'src/node/fs.ts')
+// Point the 'fs' alias to our OPFS-backed shim
+const ourFs = path.resolve(__dirname, 'src/node/FS.ts')
 
 export default defineConfig({
 	resolve: {
 		alias: {
 			...stdLibBrowser,
 			fs: ourFs,
-			'node:fs': ourFs
+			'node:fs': ourFs,
+			'fs/promises': ourFs,
+			'node:fs/promises': ourFs
 		}
 	},
 	optimizeDeps: {

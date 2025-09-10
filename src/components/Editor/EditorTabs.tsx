@@ -17,6 +17,8 @@ import { TabChip } from '../ui/TabChip'
 import { ContextMenuItem, useContextMenu } from '../../context/ContextMenu'
 import { useOPFS } from '../../hooks/useOPFS'
 import { File, isFolder } from '../../types/FS.types'
+import { isDirty, clearDirty, setBaseline } from '../../stores/dirtyStore'
+import { openConfirm } from '../ui/ConfirmDialog'
 
 interface EditorTabsProps {
 	index: number
@@ -87,8 +89,35 @@ const Tab = ({
 		}
 	})
 
-	const onFileClose = (e: Event) => {
+	const onFileClose = async (e: Event) => {
 		e.stopPropagation()
+		// If the file has unsaved changes, ask user whether to save
+		if (isDirty(file)) {
+			const node = getNode(fs, file) as File | undefined
+			const choice = await openConfirm({
+				title: 'Unsaved changes',
+				description: `Save changes to \u201C${node?.name ?? file}\u201D before closing?`,
+				actions: [
+					{ label: 'Save', value: 'save', variant: 'primary' },
+					{ label: "Don't Save", value: 'discard' },
+					{ label: 'Cancel', value: 'cancel' }
+				]
+			})
+
+			if (choice === 'cancel') return
+			if (choice === 'save' && node) {
+				try {
+					const content = openFiles.get(file) ?? ''
+					await OPFS.saveFile(node, content)
+					clearDirty(file)
+					setBaseline(file, content)
+				} catch (err) {
+					console.error('Failed to save before closing', err)
+					return // abort closing on error
+				}
+			}
+		}
+
 		batch(async () => {
 			if (isSelected()) {
 				const currentIndex = tabIndex()

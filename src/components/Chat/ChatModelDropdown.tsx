@@ -1,12 +1,7 @@
 import { For, Show, createSignal, onMount } from 'solid-js'
 import { HoverCard } from '../HoverCard'
 import { cn } from '../../utils/cn'
-import {
-  DEFAULT_MODEL,
-  SUPPORTED_MODELS,
-  getAvailableModels,
-  isGatewayConfigured
-} from './ChatApi'
+import { DEFAULT_MODEL, SUPPORTED_MODELS, getAvailableModels, isGatewayConfigured } from './Gateway'
 import {
   localModelId,
   localModels,

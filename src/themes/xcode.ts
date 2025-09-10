@@ -99,9 +99,7 @@ export const xTermXcodeLightTheme = {
 	brightBlue: '#032f62',
 	brightMagenta: '#522BB2',
 	brightCyan: '#327A9E',
-	brightWhite: '#fff',
-
-	extendedAnsi: ['#d5e6ff69']
+	brightWhite: '#fff'
 } as const
 
 export const xTermXcodeDarkTheme = {
@@ -129,9 +127,7 @@ export const xTermXcodeDarkTheme = {
 	brightBlue: '#DABAFF',
 	brightMagenta: '#FF7AB2',
 	brightCyan: '#6BDFFF',
-	brightWhite: '#CECFD0',
-
-	extendedAnsi: ['#ffffff0f']
+	brightWhite: '#CECFD0'
 } as const
 export const xCodeLightBracketColors = {
 	red: xTermXcodeLightTheme.red,

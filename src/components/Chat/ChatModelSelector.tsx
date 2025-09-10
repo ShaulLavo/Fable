@@ -1,10 +1,5 @@
 import { For, Show, createEffect, createMemo, createSignal, onMount } from 'solid-js'
-import {
-  DEFAULT_MODEL,
-  SUPPORTED_MODELS,
-  getAvailableModels,
-  isGatewayConfigured
-} from './ChatApi'
+import { DEFAULT_MODEL, SUPPORTED_MODELS, getAvailableModels, isGatewayConfigured } from './Gateway'
 import {
   LlmProvider,
   localModelId,
@@ -129,4 +124,3 @@ export default function ChatModelSelector(props: { open: boolean; onClose: () =>
     </div>
   )
 }
-

@@ -122,9 +122,7 @@ export const xTermDuotoneLightTheme = {
 	brightBlue: '#1659df',
 	brightMagenta: '#2d2006',
 	brightCyan: '#93abdc',
-	brightWhite: '#ffffff',
-
-	extendedAnsi: ['#ddceb154']
+	brightWhite: '#ffffff'
 } as const
 
 export const xTermDuotoneDarkTheme = {
@@ -152,9 +150,7 @@ export const xTermDuotoneDarkTheme = {
 	brightBlue: '#7a63ee',
 	brightMagenta: '#9a86fd',
 	brightCyan: '#e09142',
-	brightWhite: '#ffffff',
-
-	extendedAnsi: ['#36334280']
+	brightWhite: '#ffffff'
 } as const
 export const duotoneLightBracketColors = {
 	red: xTermDuotoneLightTheme.red,

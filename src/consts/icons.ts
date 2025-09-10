@@ -10,7 +10,7 @@ import { Go } from '../assets/icons/Go'
 import { Html } from '../assets/icons/Html'
 import { Image } from '../assets/icons/Image'
 import { Java } from '../assets/icons/Java'
-// import { Javascript } from '../assets/icons/Javascript'
+import { Js } from '../assets/icons/Js'
 import { Json } from '../assets/icons/Json'
 import { Markdown } from '../assets/icons/Markdown'
 import { Perl } from '../assets/icons/Perl'
@@ -31,7 +31,7 @@ export const fileExtIconMap = {
 	tsx: Reactts,
 	jsx: React,
 	ts: Typescript,
-	js: Typescript,
+	js: Js,
 	py: Python,
 	rb: Ruby,
 	java: Java,

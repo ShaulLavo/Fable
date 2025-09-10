@@ -123,9 +123,7 @@ export const xTermlightTheme = {
 	brightBlue: lightColors.lightBlue,
 	brightMagenta: lightColors.hotRed,
 	brightCyan: lightColors.brightMint,
-	brightWhite: lightColors.offWhite,
-
-	extendedAnsi: [lightColors.bluishGrayBrighter]
+	brightWhite: lightColors.offWhite
 }
 export const lightBracketColors = {
 	red: lightColors.hotRed,
@@ -313,7 +311,5 @@ export const xTermDarkTheme = {
 	brightBlue: darkColors.text,
 	brightMagenta: darkColors.hotRed,
 	brightCyan: darkColors.brightMint,
-	brightWhite: darkColors.text,
-
-	extendedAnsi: [darkColors.bluishGrayBrighter]
+	brightWhite: darkColors.text
 }

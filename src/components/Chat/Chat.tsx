@@ -1,9 +1,13 @@
-import { children, For, ParentComponent, Show } from 'solid-js'
-import ChatApi from './ChatApi'
-import { ChatInput } from './ChatInput'
-import { ChatLayout } from './ChatLayout'
-import { ChatMessage } from './ChatMessage'
-import { useChat } from './useChat'
+import {
+	children,
+	For,
+	ParentComponent,
+	Show,
+	createEffect,
+	createSignal,
+	onMount
+} from 'solid-js'
+import ChatInner from './ChatInner'
 import {
 	currentBackground,
 	currentColor,
@@ -12,10 +16,14 @@ import {
 } from '../../stores/themeStore'
 import { BASE_ICONS } from '../../stores/icons'
 import { Dynamic } from 'solid-js/web'
-import { Loader } from '../GlobalLoader'
 import { isStatusBar } from '../../stores/appStateStore'
 import { cn } from '../../utils/cn'
-import { getChatApi } from '../../stores/llmStore'
+import {
+	getEngine,
+	provider,
+	localModelId,
+	vercelModelId
+} from '../../stores/llmStore'
 import { TabChip } from '../ui/TabChip'
 import { useFS } from '../../context/FsContext'
 import { getNode } from '../../service/FS.service'
@@ -28,76 +36,40 @@ export type Message = {
 	role: 'user' | 'assistant'
 }
 export const Chat = () => {
-	const api = getChatApi()
-	const { fs, setCurrentNode } = useFS()
-	const {
-		messages,
-		inputValue,
-		setInputValue,
-		sendMessage,
-		isLoading,
-		formattedMessages,
-		includeTabContext,
-		setIncludeTabContext,
-		currentTabLabel
-	} = useChat(api)
+	const [api, setApi] = createSignal<any>(null)
 
+	const loadApi = async () => {
+		const [{ default: ChatApi }] = await Promise.all([import('./ChatApi')])
+		const eng = await getEngine()
+		const prov = provider()
+		const model = prov === 'vercel' ? vercelModelId() : localModelId()
+		setApi(new ChatApi(eng, model, prov))
+	}
+
+	// Load once on mount (deferred to idle), and refresh if provider/model changes
+	onMount(() => {
+		if ('requestIdleCallback' in window) {
+			;(window as any).requestIdleCallback(() => void loadApi())
+		} else {
+			setTimeout(() => void loadApi(), 0)
+		}
+	})
+	createEffect(() => {
+		// react to provider/model changes
+		void provider()
+		void localModelId()
+		void vercelModelId()
+		void loadApi()
+	})
+	const { fs, setCurrentNode } = useFS()
 	return (
 		<div
 			class={cn('flex flex-col h-full min-h-0 relative flex-1', {})}
 			style={{ 'background-color': currentBackground() }}
 		>
-			<Loader
-				class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-				show={isLoading()}
-			/>
-			<div
-				class="p-3 flex justify-between items-center border-b shrink-0"
-				style={{ 'border-color': dragHandleColor() }}
-			>
-				{/* <h2 class="font-bold flex items-center">
-					<Dynamic component={BASE_ICONS.chat} />
-					&nbsp; Chat
-				</h2> */}
-				<ChatModelDropdown />
-			</div>
-			<StickToBottom class="flex-1 min-h-0" initial="instant">
-				{ctx => (
-					<StickToBottom.Content class="p-1 space-y-4">
-						<For each={messages()}>
-							{(message, i) => (
-								<div>
-									<ChatMessage
-										message={message}
-										formattedMessages={formattedMessages}
-										index={i()}
-									/>
-								</div>
-							)}
-						</For>
-					</StickToBottom.Content>
-				)}
-			</StickToBottom>
-			{/* Context indicator uses the actual Tab UI */}
-			<Show when={includeTabContext() && currentTabLabel()}>
-				<div class="px-3 pb-1 flex items-center gap-2 text-xs opacity-90">
-					<TabChip
-						path={currentTabLabel()!}
-						selected={false}
-						onClose={() => setIncludeTabContext(false)}
-						onClick={() => {
-							const node = getNode(fs, currentTabLabel()!) ?? fs
-							setCurrentNode(node)
-						}}
-					/>
-				</div>
+			<Show when={api()} fallback={<div class="p-3 opacity-80 text-sm">Loading chat…</div>}>
+				<ChatInner api={api()!} />
 			</Show>
-
-			<ChatInput
-				value={inputValue()}
-				onInput={e => setInputValue(e.target.value)}
-				onSend={() => sendMessage(inputValue())}
-			/>
 		</div>
 	)
 }

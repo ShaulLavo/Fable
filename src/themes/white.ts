@@ -197,9 +197,7 @@ export const xTermWhiteLightTheme = {
 	brightBlue: '#0431fa',
 	brightMagenta: '#0431fa',
 	brightCyan: cl.regexp,
-	brightWhite: cl.foreground,
-
-	extendedAnsi: [cl.activeLine]
+	brightWhite: cl.foreground
 } as const
 
 export const xTermWhiteDarkTheme = {
@@ -227,9 +225,7 @@ export const xTermWhiteDarkTheme = {
 	brightBlue: '#bb9af7',
 	brightMagenta: '#bb9af7',
 	brightCyan: cd.regexp,
-	brightWhite: cd.foreground,
-
-	extendedAnsi: [cd.activeLine]
+	brightWhite: cd.foreground
 } as const
 export const whiteLightBracketColors = {
 	red: xTermWhiteLightTheme.red,

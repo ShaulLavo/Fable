@@ -8,8 +8,8 @@ import { getNode } from '../service/FS.service'
 import { setIsSearchBar, toggleSideBar } from '../stores/appStateStore'
 import hotkeys from 'hotkeys-js'
 import { Accessor } from 'solid-js'
-import { toast } from 'solid-sonner'
-import { isDirty, clearDirty } from '../stores/dirtyStore'
+import { themedToast } from './notify'
+import { isDirty, clearDirty, setBaseline } from '../stores/dirtyStore'
 
 hotkeys('ctrl+b,command+b', toggleSideBar)
 hotkeys('ctrl+p,command+p', e => {
@@ -87,13 +87,14 @@ export function createKeymap(
 				}
 				const path = filePath()!
 				const hadChanges = isDirty(path)
-				Promise.resolve(saveFile(node as File, currentCode))
-					.then(() => {
-						if (hadChanges) {
-							toast(`Saved ${node.name}`)
-							clearDirty(path)
-						}
-					})
+				Promise.resolve(saveFile(node as File, currentCode)).then(() => {
+					if (hadChanges) {
+							themedToast(`Saved ${node.name}`)
+						clearDirty(path)
+					}
+					// Update baseline to the freshly saved content
+					setBaseline(path, currentCode)
+				})
 				return true
 			},
 			preventDefault: true.valueOf,
