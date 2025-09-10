@@ -1,4 +1,4 @@
-import { batch, Component, createSignal, For, on, Show } from 'solid-js'
+import { batch, Component, createEffect, createSignal, For, on, Show } from 'solid-js'
 
 import { isDev } from 'solid-js/web'
 import { EMPTY_NODE_NAME } from '../../consts/FS'
@@ -33,13 +33,15 @@ export interface FileSystemTreeProps {
 export const FileSystemTree: Component<FileSystemTreeProps> = props => {
 	if (!isDev && SYSTEM_PATHS.includes(props.node.path)) return null
 
-	const {
+    const {
 		setCurrentFolder,
 		setIsOpen,
 		setCurrentNode,
 		fs,
 		updateNodeName,
-		removeNode
+		removeNode,
+		beginRename,
+		editingPath
 	} = useFS()
 
 	const {
@@ -53,9 +55,21 @@ export const FileSystemTree: Component<FileSystemTreeProps> = props => {
 
 	const { showContextMenu } = useContextMenu()
 
-	const isTemp = () => props.node.name === EMPTY_NODE_NAME
-	const [isEditing, setIsEditing] = createSignal(isTemp())
-	const [editingValue, setEditingValue] = createSignal('')
+    const isTemp = () => props.node.name === EMPTY_NODE_NAME
+    const [isEditing, setIsEditing] = createSignal(isTemp())
+    // Enter edit mode if this node is globally marked for rename
+    createEffect(
+        on(editingPath, path => {
+            setIsEditing(isTemp() || path === props.node.path)
+        })
+    )
+    const [editingValue, setEditingValue] = createSignal('')
+    // Populate input when entering edit mode
+    createEffect(() => {
+        if (isEditing()) {
+            setEditingValue(isTemp() ? '' : props.node.name)
+        }
+    })
 
 	const onClick = (e: MouseEvent) => {
 		e.stopPropagation()
@@ -100,6 +114,7 @@ export const FileSystemTree: Component<FileSystemTreeProps> = props => {
 			action: () => {
 				setIsEditing(true)
 				setEditingValue(props.node.name)
+				beginRename(props.node)
 			}
 		},
 		{
@@ -117,7 +132,14 @@ export const FileSystemTree: Component<FileSystemTreeProps> = props => {
 		},
 		{ label: 'themes', subMenuItems: themes }
 	]
-	return (
+    const onDoubleClick = (e: MouseEvent) => {
+        e.stopPropagation()
+        setEditingValue(props.node.name)
+        setIsEditing(true)
+        beginRename(props.node)
+    }
+
+    return (
 		<div
 			ref={setDropzone}
 			onContextMenu={e => {
@@ -135,7 +157,7 @@ export const FileSystemTree: Component<FileSystemTreeProps> = props => {
 				<Node
 					node={props.node}
 					onClick={onClick}
-					// onDoubleClick={onDoubleClick}
+					onDoubleClick={onDoubleClick}
 					draggedNode={draggedNode()}
 					fontSize={props.fontSize!}
 				>

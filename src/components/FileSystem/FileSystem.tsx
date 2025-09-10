@@ -15,7 +15,7 @@ import { isFsLoading } from '../../stores/appStateStore'
 interface FileSystemProps {}
 
 export function FileSystem(props: FileSystemProps) {
-	const { fs, addNode, removeNode, currentNode, updateNodeName } = useFS()
+	const { fs, addNode, removeNode, currentNode, beginRename } = useFS() as any
 	const OPFS = useOPFS()
 	const [editorContainer, setEditorContainer] = createSignal<HTMLDivElement>(
 		null!
@@ -79,7 +79,7 @@ export function FileSystem(props: FileSystemProps) {
 					<Span
 						enableHover
 						class="p-1"
-						onClick={() => updateNodeName(currentNode(), EMPTY_NODE_NAME)}
+						onClick={() => beginRename(currentNode())}
 						title="Rename"
 					>
 						<Dynamic component={BASE_ICONS.rename} />

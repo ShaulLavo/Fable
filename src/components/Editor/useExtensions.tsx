@@ -60,11 +60,12 @@ import { Dynamic, render } from 'solid-js/web'
 import { createInnerZoom } from '../../hooks/createInnerZoom'
 import { useCurrentFile } from '../../hooks/useCurrentFile'
 import { useOPFS } from '../../hooks/useOPFS'
-import { setCurrentEditorIndex } from '../../stores/appStateStore'
 import { BASE_ICONS } from '../../stores/icons'
 import { createColorCycler } from '../../utils/color'
 import { autoHide } from '../../utils/dom'
 import { createKeymap } from '../../utils/keymap'
+import { markDirty } from '../../stores/dirtyStore'
+import { ProgrammaticChange } from '../../hooks/controlledValue'
 import { viewTransition } from '../../utils/viewTransition'
 import { useSetCode } from './useSetCode'
 
@@ -115,20 +116,26 @@ export const useExtensions = (
 
 	const focusExtension = EditorView.focusChangeEffect.of((state, focus) => {
 		if (focus) {
-			viewTransition(() => setCurrentEditorIndex(index))
-			// setCurrentEditorIndex(index)
 		}
 		return null
 	})
 
 	const baseExtensions = [
 		EditorView.updateListener.of((update: ViewUpdate) => {
-			if (update.docChanged) {
-				const { doc } = update.state
-				setEditorHight(Math.max(doc.lines * 13, 13))
-				setCode(doc.toString())
-			}
-		}),
+            if (update.docChanged) {
+                const { doc } = update.state
+                setEditorHight(Math.max(doc.lines * 13, 13))
+                const newText = doc.toString()
+                setCode(newText)
+                // Skip programmatic updates we annotate via ProgrammaticChange
+                const isProgrammatic = update.transactions.some(
+                  tr => tr.annotation(ProgrammaticChange) === true
+                )
+                if (!isProgrammatic) {
+                  markDirty(currentFilePath())
+                }
+            }
+        }),
 		highlightSpecialChars(),
 		history(),
 		drawSelection(),

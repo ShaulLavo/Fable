@@ -26,6 +26,7 @@ import { IconTypes } from 'solid-icons'
 import { JSX, ValidComponent } from 'solid-js'
 import { BlocksScale } from '../assets/icons/BlocksScale'
 import { RiLogosWechat2Fill } from 'solid-icons/ri'
+import { VsCircleFilled } from 'solid-icons/vs'
 interface BaseIcons {
 	chevronDown: ValidComponent
 	chevronUp: ValidComponent
@@ -50,6 +51,7 @@ interface BaseIcons {
 	loader: ValidComponent
 	send: ValidComponent
 	chat: ValidComponent
+	dirty: ValidComponent
 }
 
 export const BASE_ICONS: BaseIcons = {
@@ -75,7 +77,8 @@ export const BASE_ICONS: BaseIcons = {
 	zen: BsYinYang,
 	loader: BlocksScale,
 	send: FiSend,
-	chat: RiLogosWechat2Fill
+	chat: RiLogosWechat2Fill,
+	dirty: VsCircleFilled
 }
 type IconSetNames = 'base' | 'cool'
 

@@ -18,6 +18,8 @@ import {
 } from './stores/themeStore'
 import { setCSSVariable } from './utils/dom'
 // import './scripts/svgToCmp'
+import { TerminalProvider } from './context/TerminalContext'
+import { Toaster } from 'solid-sonner'
 
 //TODO PERFORMANCE :
 // TODO lazy load AI + move it to worker
@@ -51,23 +53,26 @@ export default function App() {
 			component={isMock ? MockFsProvider : FSProvider}
 			initialTree={initialTree}
 		>
-			<div
-				style={{
-					height: isStatusBar()
-						? window.innerHeight - 28 + 'px'
-						: window.innerHeight + 'px',
-					overflow: 'hidden'
-				}}
-			>
-				<Main sidebarSide="left" />
-				<SearchPalette />
+			<TerminalProvider>
+				<div
+						style={{
+							height: isStatusBar()
+								? window.innerHeight - 28 + 'px'
+								: window.innerHeight + 'px',
+							overflow: 'hidden'
+						}}
+					>
+						<Main sidebarSide="left" />
+						<SearchPalette />
 
-				<ContextMenu onClose={hideContextMenu} />
-				<GlobalLoader />
-			</div>
-			<Show when={isStatusBar()}>
-				<StatusBar ref={setStatusBarRef} />
-			</Show>
+						<ContextMenu onClose={hideContextMenu} />
+						<GlobalLoader />
+						<Toaster />
+					</div>
+					<Show when={isStatusBar()}>
+						<StatusBar ref={setStatusBarRef} />
+					</Show>
+			</TerminalProvider>
 		</Dynamic>
 	)
 }

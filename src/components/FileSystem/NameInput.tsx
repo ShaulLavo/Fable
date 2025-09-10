@@ -1,7 +1,8 @@
-import { createEffect, onCleanup, Setter } from 'solid-js'
+import { createEffect, createSignal, onCleanup, Setter } from 'solid-js'
 import { useFS } from '../../context/FsContext'
 import { FSNode } from '../../types/FS.types'
 import { Input } from '../ui/Input'
+import { folderHas, getParent } from '../../service/FS.service'
 
 export const NodeNameInput = (props: {
 	node: FSNode
@@ -12,7 +13,9 @@ export const NodeNameInput = (props: {
 	setEditingValue: Setter<string>
 	setIsEditing: Setter<boolean>
 }) => {
-	const { removeNode, updateNodeName } = useFS()
+	const { removeNode, updateNodeName, fs, cancelRename } = useFS()
+	const [invalid, setInvalid] = createSignal(false)
+	let inputRef: HTMLInputElement | undefined
 
 	const finishEditing = () => {
 		const trimmedName = props.editingValue.trim()
@@ -20,12 +23,24 @@ export const NodeNameInput = (props: {
 			if (props.isTemp) removeNode(props.node)
 			props.setEditingValue('')
 			props.setIsEditing(false)
+			cancelRename()
 		} else {
+			// Prevent duplicate names in the same folder
+			const parent = getParent(props.node, fs) ?? fs
+			const exists = parent.children?.some(
+				c => c.name === trimmedName && c.path !== props.node.path
+			)
+			if (exists) {
+				setInvalid(true)
+				// keep editing; do not close
+				return
+			}
 			if (trimmedName !== props.node.name) {
 				updateNodeName(props.node, trimmedName)
 			}
 			props.setEditingValue('')
 			props.setIsEditing(false)
+			cancelRename()
 		}
 	}
 
@@ -35,6 +50,7 @@ export const NodeNameInput = (props: {
 			if (props.isTemp) removeNode(props.node)
 			props.setEditingValue('')
 			props.setIsEditing(false)
+			cancelRename()
 		}
 	}
 	createEffect(() => {
@@ -49,6 +65,29 @@ export const NodeNameInput = (props: {
 		}
 	})
 
+	// Auto-focus when entering edit mode (dynamic inputs may ignore autofocus)
+	createEffect(() => {
+		if (props.isEditing && inputRef) {
+			queueMicrotask(() => {
+				try {
+					inputRef!.focus()
+					inputRef!.select()
+				} catch {}
+			})
+		}
+	})
+
+	// Clear validation state when value changes
+	createEffect(() => {
+		if (!props.isEditing) return
+		const trimmed = props.editingValue.trim()
+		const parent = getParent(props.node, fs) ?? fs
+		const exists = parent.children?.some(
+			c => c.name === trimmed && c.path !== props.node.path
+		)
+		setInvalid(Boolean(trimmed) && Boolean(exists))
+	})
+
 	return (
 		<Input
 			value={props.editingValue}
@@ -56,7 +95,9 @@ export const NodeNameInput = (props: {
 			onBlur={finishEditing}
 			onKeyDown={handleKeyDown}
 			onClick={e => e.stopPropagation()}
+			ref={el => (inputRef = el)}
 			autofocus
+			aria-invalid={invalid() ? 'true' : undefined}
 			variant="inline"
 			style={{ width: 'fit-content' }}
 		/>

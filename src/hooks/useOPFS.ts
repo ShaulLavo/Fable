@@ -1,6 +1,7 @@
 import { ReactiveMap } from '@solid-primitives/map'
 import { dir as fsDir, file as fsFile, write as fsWrite } from 'opfs-tools'
 import { OPFS } from '../service/OPFS.service'
+import { worker } from '../stores/editorStore'
 import { FSNode, File, Folder, isFolder } from '../types/FS.types'
 import { ACTIONS, measure } from '../stores/measureStore'
 
@@ -17,15 +18,46 @@ export function useOPFS() {
 			OPFS.getFile(file)
 		)
 
-	const move = (node: FSNode, oldPath: string) =>
-		measure(ACTIONS.MOVE, { ...node, oldPath, source: 'OPFS' }, () =>
-			OPFS.move(node, oldPath)
-		)
+    const move = (node: FSNode, oldPath: string) =>
+        measure(ACTIONS.MOVE, { ...node, oldPath, source: 'OPFS' }, async () => {
+            try {
+                await (worker as any)?.releaseOPFS?.(oldPath)
+            } catch {}
+            await OPFS.move(node, oldPath)
+            try {
+                await (worker as any)?.reloadFromOPFS?.()
+            } catch {}
+        })
 
-	const remove = (node: FSNode) =>
-		measure(ACTIONS.REMOVE, { ...node, source: 'OPFS' }, () =>
-			OPFS.remove(node)
-		)
+    const remove = (node: FSNode) =>
+        measure(ACTIONS.REMOVE, { ...node, source: 'OPFS' }, async () => {
+            try {
+                // Prefer targeted release for files; broader for directories
+                if (isFolder(node)) {
+                    await (worker as any)?.releaseOPFS?.(node.path)
+                    await (worker as any)?.releaseOPFS?.('/')
+                } else {
+                    await (worker as any)?.releaseOPFS?.(node.path)
+                }
+            } catch {}
+            try {
+                await OPFS.remove(node)
+            } catch (e: any) {
+                // Last-resort: release everything and try once more
+                if (e?.name === 'NoModificationAllowedError') {
+                    try {
+                        await (worker as any)?.releaseOPFS?.('/')
+                    } catch {}
+                    await OPFS.remove(node)
+                } else {
+                    throw e
+                }
+            }
+            try {
+                // Refresh the worker's view of OPFS after deletion
+                await (worker as any)?.reloadFromOPFS?.()
+            } catch {}
+        })
 
 	const tree = (node: Folder) =>
 		measure(ACTIONS.TREE, { ...node, source: 'OPFS' }, () => OPFS.tree(node))

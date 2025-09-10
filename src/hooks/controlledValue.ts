@@ -1,4 +1,5 @@
 import { EditorView } from '@codemirror/view'
+import { Annotation } from '@codemirror/state'
 import {
 	Accessor,
 	Resource,
@@ -33,7 +34,8 @@ export function createEditorControlledValue(
 							from: 0,
 							to: localValue?.length,
 							insert: code ?? ''
-						}
+						},
+						annotations: [ProgrammaticChange.of(true)]
 					})
 				})
 			)
@@ -62,6 +64,7 @@ export function createEditorControlledValueWithSkip(
 					const localValue = view?.state.doc.toString()
 					if (code === localValue) return
 					// string cmpare unnotticeable up to 1k rows
+					//TODO check with diffrenth lenghts
 					//TODO implement a better way to compare large strings
 
 					view.dispatch({
@@ -69,7 +72,8 @@ export function createEditorControlledValueWithSkip(
 							from: 0,
 							to: localValue?.length,
 							insert: code ?? ''
-						}
+						},
+						annotations: [ProgrammaticChange.of(true)]
 					})
 				})
 			)
@@ -77,3 +81,6 @@ export function createEditorControlledValueWithSkip(
 	)
 	return setSkip
 }
+
+// Annotation to flag programmatic document changes that should not mark files dirty
+export const ProgrammaticChange = Annotation.define<boolean>()

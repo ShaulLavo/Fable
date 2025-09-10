@@ -55,10 +55,6 @@ export const [lastKnownRightSideBarSize, setLastKnownRightSideBarSize] =
 		name: 'lastKnownRightSideBarSize',
 		storage: dualStorage
 	})
-export const [currentEditorIndex, setCurrentEditorIndex] = createSignal(0)
-export const [currentTerminalIndex, setCurrentTerminalIndex] = createSignal(0)
-export const currentEditorId = () => 'editor-' + currentEditorIndex()
-export const currentTerminalId = () => 'terminal-' + currentEditorIndex()
 
 export const toggleSideBar = runOncePerTick(() => {
 	const position = mainSideBarPosition()

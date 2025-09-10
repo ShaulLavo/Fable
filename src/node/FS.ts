@@ -1,150 +1,62 @@
-interface ResolveOptions {
-	type?: 'file' | 'directory' | null
-	create?: boolean
+// Browser-friendly fs shim that proxies to our OPFS services (OPFS.service.ts)
+// It provides a subset of Node's fs API plus `fs.promises`.
+
+import {
+	readText as opfsReadText,
+	readBytes as opfsReadBytes,
+	writeBytes as opfsWriteBytes,
+	writeText as opfsWriteText,
+	removePath as opfsRemovePath,
+	movePath as opfsMovePath,
+	list as opfsList,
+	mkdirp as opfsMkdirp,
+	statPath as opfsStatPath,
+	fileStream as opfsFileStream
+} from '../service/OPFS.service'
+
+type Callback<T = any> = (err: Error | null, result?: T) => void
+
+function toEncodingOption(options?: any): { encoding?: string } | undefined {
+	if (typeof options === 'string') return { encoding: options }
+	if (options && typeof options === 'object') return options
+	return undefined
 }
 
-async function resolvePath(
-	path: string,
-	options: ResolveOptions = {}
-): Promise<FileSystemFileHandle | FileSystemDirectoryHandle> {
-	const { type = 'file', create = false } = options
-	const parts = path.split('/').filter(part => part !== '')
-	let current: FileSystemDirectoryHandle =
-		await navigator.storage.getDirectory()
-	for (let i = 0; i < parts.length; i++) {
-		const part = parts[i]
-		const isLast = i === parts.length - 1
-		if (isLast) {
-			if (type === 'file') {
-				return await current.getFileHandle(part, { create })
-			} else if (type === 'directory') {
-				return await current.getDirectoryHandle(part, { create })
-			}
-		} else {
-			current = await current.getDirectoryHandle(part, { create: true })
-		}
-	}
-	return current
-}
-type CreateReadStreamOptions = {
-	start?: number
-	end?: number
-	highWaterMark?: number
-}
-class FileHandle {
-	handle: FileSystemFileHandle
-	flags: string
-	position: number
-	constructor(handle: FileSystemFileHandle, flags: string = 'r') {
-		this.handle = handle
-		this.flags = flags
-		this.position = 0
-	}
-	async read(
-		buffer: Uint8Array,
-		offset: number,
-		length: number,
-		position?: number
-	): Promise<{ bytesRead: number; buffer: Uint8Array }> {
-		const file = await this.handle.getFile()
-		const pos =
-			position !== undefined && position !== null ? position : this.position
-		const blob = file.slice(pos, pos + length)
-		const arrayBuffer = await blob.arrayBuffer()
-		const bytesRead = Math.min(length, arrayBuffer.byteLength)
-		buffer.set(new Uint8Array(arrayBuffer), offset)
-		if (position === undefined || position === null) {
-			this.position = pos + bytesRead
-		}
-		return { bytesRead, buffer }
-	}
-	async write(
-		buffer: Uint8Array,
-		offset: number,
-		length: number,
-		position?: number
-	): Promise<{ bytesWritten: number; buffer: Uint8Array }> {
-		const writable = await this.handle.createWritable({
-			keepExistingData: true
-		})
-		let pos: number
-		if (this.flags.includes('a')) {
-			const file = await this.handle.getFile()
-			pos = file.size
-		} else if (position !== undefined && position !== null) {
-			pos = position
-		} else {
-			pos = this.position
-		}
-		await writable.seek(pos)
-		await writable.write(buffer.slice(offset, offset + length))
-		await writable.close()
-		if (
-			(position === undefined || position === null) &&
-			!this.flags.includes('a')
-		) {
-			this.position = pos + length
-		}
-		return { bytesWritten: length, buffer }
-	}
-	async close(): Promise<void> {}
-}
-
-class Dirent {
-	name: string
-	_handle: FileSystemHandle
-	constructor(handle: FileSystemHandle) {
-		this.name = handle.name
-		this._handle = handle
-	}
-	isFile(): boolean {
-		return this._handle.kind === 'file'
-	}
-	isDirectory(): boolean {
-		return this._handle.kind === 'directory'
-	}
-	isBlockDevice(): boolean {
-		return false
-	}
-	isCharacterDevice(): boolean {
-		return false
-	}
-	isSymbolicLink(): boolean {
-		return false
-	}
-	isFIFO(): boolean {
-		return false
-	}
-	isSocket(): boolean {
-		return false
+function nodeify<Args extends any[], R>(fn: (...args: Args) => Promise<R>) {
+	return (...args: any[]) => {
+		const cb: Callback<R> | undefined =
+			typeof args[args.length - 1] === 'function' ? args.pop() : undefined
+		fn(...(args as Args))
+			.then(res => cb?.(null, res))
+			.catch(err => cb?.(err ?? new Error('Unknown fs error')))
 	}
 }
 
-class Dir {
-	dirHandle: FileSystemDirectoryHandle
-	entries: AsyncIterator<FileSystemHandle>
-	constructor(dirHandle: FileSystemDirectoryHandle) {
-		this.dirHandle = dirHandle
-		this.entries = (dirHandle as any).values()
+const readFile = nodeify(async (path: string, options?: any) => {
+	const enc = toEncodingOption(options)?.encoding
+	if (enc) return await opfsReadText(path)
+	return await opfsReadBytes(path)
+})
+
+export const writeFile = nodeify(
+	async (path: string, data: Uint8Array | string, options?: any) => {
+		const enc = toEncodingOption(options)?.encoding
+		if (typeof data === 'string' || enc)
+			return await opfsWriteText(path, String(data))
+		return await opfsWriteBytes(path, data as Uint8Array)
 	}
-	async read(): Promise<Dirent | null> {
-		const result = await this.entries.next()
-		if (result.done) return null
-		return new Dirent(result.value)
-	}
-	async close(): Promise<void> {}
-}
+)
 
 class Stats {
-	dev: number
-	ino: number
+	dev = 0
+	ino = 0
 	mode: number
-	nlink: number
-	uid: number
-	gid: number
-	rdev: number
+	nlink = 1
+	uid = 0
+	gid = 0
+	rdev = 0
 	size: number
-	blksize: number
+	blksize = 4096
 	blocks: number
 	atimeMs: number
 	mtimeMs: number
@@ -154,190 +66,211 @@ class Stats {
 	mtime: Date
 	ctime: Date
 	birthtime: Date
-	constructor(
-		fileOrDir: File | { kind: 'directory'; lastModified: number; size: number }
-	) {
-		const isFile = fileOrDir instanceof File
+	constructor(isFile: boolean, size: number, timeMs: number) {
 		this.mode = isFile ? 0o100000 : 0o40000
-		this.dev = 0
-		this.ino = 0
-		this.nlink = 1
-		this.uid = 0
-		this.gid = 0
-		this.rdev = 0
-		this.size = isFile ? fileOrDir.size : 0
-		this.blksize = 4096
-		this.blocks = Math.ceil(this.size / 512)
-		const time = fileOrDir.lastModified
-		this.atimeMs = time
-		this.mtimeMs = time
-		this.ctimeMs = time
-		this.birthtimeMs = time
-		this.atime = new Date(time)
-		this.mtime = new Date(time)
-		this.ctime = new Date(time)
-		this.birthtime = new Date(time)
+		this.size = size
+		this.blocks = Math.ceil(size / 512)
+		this.atimeMs = timeMs
+		this.mtimeMs = timeMs
+		this.ctimeMs = timeMs
+		this.birthtimeMs = timeMs
+		this.atime = new Date(timeMs)
+		this.mtime = new Date(timeMs)
+		this.ctime = new Date(timeMs)
+		this.birthtime = new Date(timeMs)
 	}
-	isFile(): boolean {
+	isFile() {
 		return (this.mode & 0o170000) === 0o100000
 	}
-	isDirectory(): boolean {
+	isDirectory() {
 		return (this.mode & 0o170000) === 0o40000
 	}
-	isBlockDevice(): boolean {
+	isBlockDevice() {
 		return false
 	}
-	isCharacterDevice(): boolean {
+	isCharacterDevice() {
 		return false
 	}
-	isSymbolicLink(): boolean {
+	isSymbolicLink() {
 		return false
 	}
-	isFIFO(): boolean {
+	isFIFO() {
 		return false
 	}
-	isSocket(): boolean {
+	isSocket() {
 		return false
 	}
 }
 
-const fsPromises = {
-	async open(
-		path: string,
-		flags: string = 'r',
-		mode?: number
-	): Promise<FileHandle> {
-		const create = flags.includes('w') || flags.includes('a')
-		const truncate = flags.includes('w')
-		const handle = (await resolvePath(path, {
-			type: 'file',
-			create
-		})) as FileSystemFileHandle
-		if (truncate) {
-			const writable = await handle.createWritable({ keepExistingData: false })
-			await writable.close()
-		}
-		return new FileHandle(handle, flags)
-	},
-	async readFile(
-		path: string,
-		options: { encoding?: string } = {}
-	): Promise<string | Uint8Array> {
-		const handle = (await resolvePath(path, {
-			type: 'file'
-		})) as FileSystemFileHandle
-		const file = await handle.getFile()
-		if (options.encoding) {
-			return await file.text()
-		}
-		return new Uint8Array(await file.arrayBuffer())
-	},
-	async writeFile(
-		path: string,
-		data: Uint8Array | string,
-		options: { encoding?: string } = {}
-	): Promise<void> {
-		const handle = (await resolvePath(path, {
-			type: 'file',
-			create: true
-		})) as FileSystemFileHandle
-		const writable = await handle.createWritable({ keepExistingData: false })
-		await writable.write(data)
-		await writable.close()
-	},
-	async stat(path: string): Promise<Stats> {
-		const handle = await resolvePath(path, { type: null })
-		const file =
-			handle.kind === 'file'
-				? await (handle as FileSystemFileHandle).getFile()
-				: ({ kind: 'directory', lastModified: 0, size: 0 } as const)
-		return new Stats(file)
-	},
-	async mkdir(path: string): Promise<void> {
-		await resolvePath(path, { type: 'directory', create: true })
-	},
-	async readdir(path: string): Promise<string[]> {
-		const dirHandle = (await resolvePath(path, {
-			type: 'directory'
-		})) as FileSystemDirectoryHandle
-		const entries: string[] = []
-		for await (const entry of (dirHandle as any).values()) {
-			entries.push(entry.name)
-		}
-		return entries
-	},
-	async opendir(path: string): Promise<Dir> {
-		const dirHandle = (await resolvePath(path, {
-			type: 'directory'
-		})) as FileSystemDirectoryHandle
-		return new Dir(dirHandle)
-	},
-	async unlink(path: string): Promise<void> {
-		const parentPath = path.substring(0, path.lastIndexOf('/')) || '/'
-		const fileName = path.split('/').pop()!
-		const parentDir = (await resolvePath(parentPath, {
-			type: 'directory'
-		})) as FileSystemDirectoryHandle
-		await parentDir.removeEntry(fileName)
-	},
-	async rename(oldPath: string, newPath: string): Promise<void> {
-		const oldParentPath = oldPath.substring(0, oldPath.lastIndexOf('/')) || '/'
-		const oldName = oldPath.split('/').pop()!
-		const newParentPath = newPath.substring(0, newPath.lastIndexOf('/')) || '/'
-		const newName = newPath.split('/').pop()!
-		const oldParentDir = (await resolvePath(oldParentPath, {
-			type: 'directory'
-		})) as FileSystemDirectoryHandle
-		const fileHandle = await oldParentDir.getFileHandle(oldName)
-		const newParentDir = (await resolvePath(newParentPath, {
-			type: 'directory',
-			create: true
-		})) as FileSystemDirectoryHandle
-		const file = await fileHandle.getFile()
-		const newHandle = await newParentDir.getFileHandle(newName, {
-			create: true
-		})
-		const writable = await newHandle.createWritable()
-		await writable.write(await file.arrayBuffer())
-		await writable.close()
-		await oldParentDir.removeEntry(oldName)
-	},
-	async createReadStream(
-		path: string,
-		options: CreateReadStreamOptions = {}
-	): Promise<ReadableStream<Uint8Array>> {
-		const { start = 0, end = Infinity, highWaterMark = 64 * 1024 } = options
-		const handle = (await resolvePath(path, {
-			type: 'file'
-		})) as FileSystemFileHandle
-		const file = await handle.getFile()
-		const fileSize = file.size
-		if (start > fileSize - 1 || end < start) {
-			throw new Error(
-				'Invalid range: start must be less than or equal to file size and end must be greater than or equal to start'
-			)
-		}
-		const effectiveEnd = Math.min(end, fileSize - 1)
-		let position = start
-		const stream = new ReadableStream<Uint8Array>({
-			async pull(controller) {
-				if (position > effectiveEnd) {
-					controller.close()
-					return
+const stat = nodeify(async (path: string, _options?: any) => {
+	const s = await opfsStatPath(path)
+	if (!s)
+		throw Object.assign(
+			new Error(`ENOENT: no such file or directory, stat '${path}'`),
+			{ code: 'ENOENT' }
+		)
+	return new Stats(s.isFile, s.size, s.mtimeMs)
+})
+
+const mkdir = nodeify(async (path: string, _options?: any) => opfsMkdirp(path))
+const readdir = nodeify(async (path: string, _options?: any) =>
+	(await opfsList(path)).map(e => e.name)
+)
+const unlink = nodeify(async (path: string) => opfsRemovePath(path))
+const rename = nodeify(async (oldPath: string, newPath: string) =>
+	opfsMovePath(oldPath, newPath)
+)
+
+class Dirent {
+	name: string
+	private _kind: 'file' | 'dir'
+	constructor(name: string, kind: 'file' | 'dir') {
+		this.name = name
+		this._kind = kind
+	}
+	isFile() {
+		return this._kind === 'file'
+	}
+	isDirectory() {
+		return this._kind === 'dir'
+	}
+	isBlockDevice() {
+		return false
+	}
+	isCharacterDevice() {
+		return false
+	}
+	isSymbolicLink() {
+		return false
+	}
+	isFIFO() {
+		return false
+	}
+	isSocket() {
+		return false
+	}
+}
+
+class Dir {
+	private list: { name: string; kind: 'file' | 'dir' }[]
+	private idx = 0
+	constructor(list: { name: string; kind: 'file' | 'dir' }[]) {
+		this.list = list
+	}
+	async read(): Promise<Dirent | null> {
+		if (this.idx >= this.list.length) return null
+		const item = this.list[this.idx++]
+		return new Dirent(item.name, item.kind)
+	}
+	async close(): Promise<void> {
+		/* no-op */
+	}
+}
+
+const opendir = nodeify(async (path: string) => new Dir(await opfsList(path)))
+
+function createReadStream(path: string, options?: any) {
+	// If start/end provided, slice from the underlying stream
+	const { start = 0, end = Infinity } = options || {}
+	const streamPromise = opfsFileStream(path)
+	const out = new ReadableStream<Uint8Array>({
+		async start(controller) {
+			const src = await streamPromise
+			const reader = src.getReader()
+			let pos = 0
+			try {
+				while (true) {
+					const { done, value } = await reader.read()
+					if (done) break
+					if (!value) continue
+					let chunk = value
+					const nextPos = pos + chunk.byteLength
+					// Skip before start
+					if (nextPos <= start) {
+						pos = nextPos
+						continue
+					}
+					// Trim leading if needed
+					if (pos < start) chunk = chunk.slice(start - pos)
+					// Trim trailing if needed
+					if (pos < end && nextPos > end + 1)
+						chunk = chunk.slice(0, Math.max(0, end + 1 - pos))
+					if (chunk.byteLength > 0) controller.enqueue(chunk)
+					pos = nextPos
+					if (pos > end) break
 				}
-				const chunkSize = Math.min(highWaterMark, effectiveEnd - position + 1)
-				const blob = file.slice(position, position + chunkSize)
-				const arrayBuffer = await blob.arrayBuffer()
-				const chunk = new Uint8Array(arrayBuffer)
-				controller.enqueue(chunk)
-				position += chunk.length
-				if (position > effectiveEnd) {
-					controller.close()
-				}
+			} finally {
+				controller.close()
 			}
-		})
-		return stream
+		}
+	})
+	return out
+}
+
+// Synchronous APIs are not supported in the browser. Provide minimal stubs.
+function notSupportedSync(name: string): any {
+	return () => {
+		throw new Error(
+			`fs.${name}Sync is not supported in the browser environment`
+		)
 	}
 }
 
-export { fsPromises }
+const readFileSync = notSupportedSync('readFile')
+const writeFileSync = notSupportedSync('writeFile')
+const statSync = notSupportedSync('stat')
+const mkdirSync = notSupportedSync('mkdir')
+const readdirSync = notSupportedSync('readdir')
+const unlinkSync = notSupportedSync('unlink')
+const renameSync = notSupportedSync('rename')
+const opendirSync = notSupportedSync('opendir')
+
+function existsSync(_path: string): boolean {
+	// No sync filesystem checks in browser; return false to be safe.
+	return false
+}
+
+const fs = {
+	// callback-style
+	readFile,
+	writeFile,
+	stat,
+	mkdir,
+	readdir,
+	unlink,
+	rename,
+	opendir,
+	createReadStream,
+	// sync stubs
+	readFileSync,
+	writeFileSync,
+	statSync,
+	mkdirSync,
+	readdirSync,
+	unlinkSync,
+	renameSync,
+	opendirSync,
+	existsSync,
+	// promises API
+	promises: {
+		readFile: (path: string, options?: any) =>
+			readFile(path, options) as unknown as Promise<any>,
+		writeFile: (path: string, data: any, options?: any) =>
+			writeFile(path, data, options) as unknown as Promise<void>,
+		stat: (path: string, options?: any) =>
+			stat(path, options) as unknown as Promise<any>,
+		mkdir: (path: string, options?: any) =>
+			mkdir(path, options) as unknown as Promise<void>,
+		readdir: (path: string, options?: any) =>
+			readdir(path, options) as unknown as Promise<string[]>,
+		unlink: (path: string) => unlink(path) as unknown as Promise<void>,
+		rename: (oldPath: string, newPath: string) =>
+			rename(oldPath, newPath) as unknown as Promise<void>,
+		opendir: (path: string) => opendir(path) as unknown as Promise<any>,
+		createReadStream: (path: string, options?: any) =>
+			Promise.resolve(createReadStream(path, options))
+	}
+}
+
+export const promises = fs.promises as any
+export default fs

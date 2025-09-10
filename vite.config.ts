@@ -2,8 +2,11 @@ import { defineConfig, ViteDevServer } from 'vite'
 import solidPlugin from 'vite-plugin-solid'
 import tailwindcss from '@tailwindcss/vite'
 import compileTime from 'vite-plugin-compile-time'
+import inject from '@rollup/plugin-inject'
 import devServer from '@hono/vite-dev-server'
 import bunAdapter from '@hono/vite-dev-server/bun'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 const fullReloadAlways = {
 	name: 'full-reload-always',
 	handleHotUpdate({ server }: any) {
@@ -35,13 +38,40 @@ const proxy = () => ({
 		})
 	}
 })
+const { default: stdLibBrowser } = await import('node-stdlib-browser')
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const ourFs = path.resolve(__dirname, 'src/node/fs.ts')
+
 export default defineConfig({
+	resolve: {
+		alias: {
+			...stdLibBrowser,
+			fs: ourFs,
+			'node:fs': ourFs
+		}
+	},
+	optimizeDeps: {
+		include: ['buffer', 'process'],
+		esbuildOptions: {
+			// Ensure esbuild also injects the node stdlib shims during pre-bundling
+			inject: ['node-stdlib-browser/helpers/esbuild/shim']
+		}
+	},
 	plugins: [
 		tailwindcss(),
 		solidPlugin(),
 		compileTime(),
 		proxy(),
-		fullReloadAlways
+		fullReloadAlways,
+		{
+			...inject({
+				// Use the module id string, not an imported object
+				global: ['node-stdlib-browser/helpers/esbuild/shim', 'global'],
+				process: ['node-stdlib-browser/helpers/esbuild/shim', 'process'],
+				Buffer: ['node-stdlib-browser/helpers/esbuild/shim', 'Buffer']
+			}),
+			enforce: 'post'
+		}
 		// devServer({
 		// 	entry: 'src/server/index.ts',
 		// 	adapter: bunAdapter

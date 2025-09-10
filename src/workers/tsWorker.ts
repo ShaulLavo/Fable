@@ -16,6 +16,7 @@ import { createOPFSSystem } from './opfsSystem'
 
 let storage: Awaited<ReturnType<typeof createWorkerStorage>>
 let virtualTypeScriptEnvironment: VirtualTypeScriptEnvironment = null!
+let opfsSys: (ts.System & { opfsRelease?: (p: string) => void }) | null = null
 
 async function preloadProjectFilesFromOPFS(env: VirtualTypeScriptEnvironment) {
 	// Build a tree from OPFS and load all file contents into the TS env
@@ -51,6 +52,7 @@ const worker = createWorker(async () => {
 
 	// Create an OPFS-backed System with the TypeScript lib files overlaid
 	const sys = await createOPFSSystem(fsMap)
+	opfsSys = sys as any
 	virtualTypeScriptEnvironment = createVirtualTypeScriptEnvironment(
 		sys,
 		[],
@@ -69,6 +71,11 @@ Comlink.expose({
 	async reloadFromOPFS() {
 		if (!virtualTypeScriptEnvironment) return
 		await preloadProjectFilesFromOPFS(virtualTypeScriptEnvironment)
+	},
+	async releaseOPFS(path: string) {
+		try {
+			opfsSys?.opfsRelease?.(path)
+		} catch {}
 	}
 })
 self.postMessage('ready')
