@@ -10,6 +10,7 @@ import { TabChip } from '../ui/TabChip'
 import ChatModelDropdown from './ChatModelDropdown'
 import { StickToBottom } from '../StickToBottom'
 import { currentBackground } from '../../stores/themeStore'
+import { panelGap } from '../../stores/appStateStore'
 
 export default function ChatInner(props: { api: ChatApi }) {
 	const { fs, setCurrentNode } = useFS()
@@ -34,14 +35,17 @@ export default function ChatInner(props: { api: ChatApi }) {
 			/>
 			<div
 				class="p-3 flex justify-between items-center border-b shrink-0"
-				style={{ 'border-color': currentBackground() }}
+				style={{
+					'border-color': currentBackground(),
+					'border-width': panelGap() + 'px'
+				}}
 			>
 				<ChatModelDropdown />
 			</div>
 			<StickToBottom class="flex-1 min-h-0" initial="instant">
 				{ctx => (
 					<StickToBottom.Content class="p-1 space-y-4">
-						<For each={messages()}>
+						<For each={messages}>
 							{(message, i) => (
 								<div>
 									<ChatMessage

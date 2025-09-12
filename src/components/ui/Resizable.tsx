@@ -1,11 +1,20 @@
 import type { ValidComponent } from 'solid-js'
-import { createEffect, Show, splitProps } from 'solid-js'
+import {
+	createEffect,
+	createSignal,
+	onCleanup,
+	Show,
+	splitProps
+} from 'solid-js'
 
 import type { DynamicProps, HandleProps, RootProps } from '@corvu/resizable'
 import ResizablePrimitive, { usePanelContext } from '@corvu/resizable'
 
 import { cn } from '../../utils/cn'
 import { currentBackground, currentColor } from '../../stores/themeStore'
+import { panelGap } from '../../stores/appStateStore'
+import { style } from 'solid-js/web'
+import { getTransparentColor } from '../../utils/color'
 
 type ResizableProps<T extends ValidComponent = 'div'> = RootProps<T> & {
 	class?: string
@@ -34,20 +43,72 @@ type ResizableHandleProps<T extends ValidComponent = 'button'> =
 		class?: string
 		withHandle?: boolean
 	}
+type Orientation = 'horizontal' | 'vertical'
 
+function createOrientationRef(set: (o: Orientation) => void) {
+	let el: HTMLElement | null = null
+	let mo: MutationObserver | null = null
+
+	const read = () => {
+		if (!el) return
+		const v = el.dataset.orientation as Orientation | undefined
+		set(v === 'vertical' ? 'vertical' : 'horizontal')
+	}
+
+	onCleanup(() => {
+		if (mo) mo.disconnect()
+		mo = null
+		el = null
+	})
+
+	return (node: HTMLElement | null) => {
+		// cleanup old observer if ref changes
+		if (mo) {
+			mo.disconnect()
+			mo = null
+		}
+		el = node
+		if (!el) return
+
+		read()
+		queueMicrotask(read)
+
+		mo = new MutationObserver(muts => {
+			for (const m of muts) {
+				if (m.type === 'attributes' && m.attributeName === 'data-orientation') {
+					read()
+				}
+			}
+		})
+		mo.observe(el, { attributes: true, attributeFilter: ['data-orientation'] })
+	}
+}
 const ResizableHandle = <T extends ValidComponent = 'button'>(
 	props: DynamicProps<T, ResizableHandleProps<T>>
 ) => {
 	const [, rest] = splitProps(props as ResizableHandleProps, [
 		'class',
-		'withHandle'
+		'withHandle',
+		'style'
 	])
+	const [orientation, setOrientation] = createSignal<Orientation>('horizontal')
+	const orientationRef = createOrientationRef(setOrientation)
+
+	const isVertical = () => orientation() === 'vertical'
+
 	return (
 		<ResizablePrimitive.Handle
 			class={cn(
 				'z-50 relative flex w-px shrink-0 items-center justify-center bg-border after:absolute after:inset-y-0 after:left-1/2 after:w-1 after:-translate-x-1/2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1 data-[orientation=vertical]:h-px data-[orientation=vertical]:w-full data-[orientation=vertical]:after:left-0 data-[orientation=vertical]:after:h-1 data-[orientation=vertical]:after:w-full data-[orientation=vertical]:after:-translate-y-1/2 data-[orientation=vertical]:after:translate-x-0 [&[data-orientation=vertical]>div]:rotate-90',
 				props.class
 			)}
+			style={{
+				'background-color': getTransparentColor(currentColor(), 0.1),
+				...(!isVertical() && { width: panelGap() + 'px' }),
+				...(isVertical() && { height: panelGap() + 'px' })
+				// 'border-radius': -panelGap() + 'px'
+			}}
+			ref={orientationRef}
 			{...rest}
 		>
 			<Show when={props.withHandle}>

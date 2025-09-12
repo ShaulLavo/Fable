@@ -54,7 +54,7 @@ export default function ChatModelDropdown() {
 	const content = (
 		<div class="min-w-[320px] max-w-[480px] text-xs">
 			<div
-				class="flex border-b"
+				class="flex border-b-2 "
 				style={{ 'border-color': currentBackground() }}
 			>
 				<div class="px-2 py-1 font-semibold">Select Model</div>

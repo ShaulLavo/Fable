@@ -32,13 +32,18 @@ export function FileSystem(props: FileSystemProps) {
 		key: 'explorer'
 	})
 
-	return (
-		<div
-			class="flex flex-col min-w-28 relative z-80 h-full min-h-0"
-			ref={setEditorContainer}
-			style={{
-				'background-color': secondaryBackground(),
-				color: secondaryColor()
+    const noScrollbarCss = `
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    `
+
+    return (
+        <div
+            class="flex flex-col min-w-28 relative z-80 h-full min-h-0"
+            ref={setEditorContainer}
+            style={{
+                'background-color': secondaryBackground(),
+                color: secondaryColor()
 				// 'z-index': 80,
 				// position: 'relative'
 			}}
@@ -84,12 +89,13 @@ export function FileSystem(props: FileSystemProps) {
 					</Span>
 				</div>
 			</div>
-			<div class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
-				<For each={fs.children}>
-					{node => (
-						<FileSystemTree
-							node={node}
-							fontSize={fontSize()}
+            <style>{noScrollbarCss}</style>
+            <div class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden no-scrollbar">
+                <For each={fs.children}>
+                    {node => (
+                        <FileSystemTree
+                            node={node}
+                            fontSize={fontSize()}
 							isContainerHovered={isHovered()}
 						/>
 					)}

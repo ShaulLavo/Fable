@@ -24,20 +24,21 @@ export const Node = (props: {
 
 	const isCurrent = () => props.node.path === currentNode().path
 
-	return (
-		<div class="relative">
+    return (
+        <div class="relative group">
 			<Arrow
 				node={props.node}
 				onClick={props.onClick}
 				fontSize={props.fontSize}
 			/>
-			<Span
-				fontSize={props.fontSize}
-				selected={isCurrent()}
-				enableHover={!props.draggedNode}
-				onClick={props.onClick}
-				onDblClick={props.onDoubleClick}
-			>
+            <Span
+                fontSize={props.fontSize}
+                selected={isCurrent()}
+                enableHover={!props.draggedNode}
+                class="transition-transform duration-150 group-hover:translate-x-[2px]"
+                onClick={props.onClick}
+                onDblClick={props.onDoubleClick}
+            >
 				<span class="mr-2 pl-1">
 					<Dynamic component={getNodeIcon(props.node)} size={props.fontSize} />
 				</span>

@@ -109,11 +109,7 @@ function EditorLayout(_props: EditorLayoutProps) {
 								<Editor index={index()} />
 							</div>
 						</ResizablePanel>
-						{index() < editorPanels().length - 1 && (
-							<ResizableHandle
-								style={{ 'background-color': currentBackground() }}
-							/>
-						)}
+						{index() < editorPanels().length - 1 && <ResizableHandle />}
 					</>
 				)}
 			</For>

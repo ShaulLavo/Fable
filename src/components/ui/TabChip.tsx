@@ -9,7 +9,7 @@ import { VsClose } from 'solid-icons/vs'
 import { dirtyVersion, isDirty } from '../../stores/dirtyStore'
 import Icon from './Icon'
 
-type RefProp = HTMLDivElement | ((el: HTMLDivElement) => void)
+type RefProp = HTMLSpanElement | ((el: HTMLSpanElement) => void)
 
 interface TabChipProps {
 	path: string
@@ -43,7 +43,7 @@ export function TabChip(props: TabChipProps) {
 			onMouseOut={() => setIsHovered(false)}
 			onContextMenu={props.onContextMenu}
 			onClick={() => props.onClick?.()}
-			class={`px-1.5 py-1.5 focus:outline-none text-xs items-center flex cursor-pointer relative z-50 box-border border-t-1 gap-1`}
+			class={`px-1.5 py-1.5 focus:outline-none text-xs items-center flex cursor-pointer relative z-50 box-border border-t-1 gap-1 transition-transform duration-150 hover:translate-y-[-2px]`}
 			style={{
 				'border-color': props.selected ? currentColor() : 'transparent',
 				...(widthStyle() || {})

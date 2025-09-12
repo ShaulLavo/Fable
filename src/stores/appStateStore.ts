@@ -5,6 +5,8 @@ import { runOncePerTick } from '../utils/utils'
 import { setShowFoldGutter, setShowLineNumber } from './editorStore'
 import { useLoading } from '../hooks/useLoading'
 
+export const [panelGap] = createSignal(2)
+
 export const [rootName] = createSignal('root')
 
 export const { isLoading: isGlobalLoading, setIsLoading: setIsGlobalLoading } =
@@ -24,8 +26,8 @@ export const [horizontalPanelSize, setHorizontalPanelSize] = makePersisted(
 	{ name: 'horizontalPanelSize', storage: dualStorage }
 )
 export const [verticalPanelSize, setVerticalPanelSize] = makePersisted(
-    createSignal<number[]>([0.7, 0.3]),
-    { name: 'verticalPanelSize', storage: dualStorage }
+	createSignal<number[]>([0.7, 0.3]),
+	{ name: 'verticalPanelSize', storage: dualStorage }
 )
 export const [editorPanelSizes, setEditorPanelSizes] = makePersisted(
 	createSignal<number[][]>([]),
@@ -126,50 +128,49 @@ export const STATUS_BAR_HEIGHT = 28
 export const EDITOR_TAB_HEIGHT = 30.5
 export const CURRENT_PATH_BAR_HEIGHT = 16
 export const [isStatusBar, setIsStatusBar] = makePersisted(createSignal(true), {
-    name: 'isStatusBar',
-    storage: dualStorage
+	name: 'isStatusBar',
+	storage: dualStorage
 })
 export const [isSearchBar, setIsSearchBar] = createSignal(false)
 
 export const [isZenMode, setIsZenMode] = makePersisted(createSignal(false), {
-    name: 'isZenMode',
-    storage: dualStorage
+	name: 'isZenMode',
+	storage: dualStorage
 })
 
 // Terminal visibility toggle (persisted)
 export const [isTerminal, setIsTerminal] = makePersisted(createSignal(true), {
-    name: 'isTerminal',
-    storage: dualStorage
+	name: 'isTerminal',
+	storage: dualStorage
 })
 
 // Remember user's terminal preference across Zen mode toggles
-const [lastKnownIsTerminal, setLastKnownIsTerminal] = createSignal<boolean>(
-    isTerminal()
-)
+const [lastKnownIsTerminal, setLastKnownIsTerminal] =
+	createSignal<boolean>(isTerminal())
 
 export const toggleTerminal = runOncePerTick(() => {
-    setIsTerminal(v => !v)
-    return true
+	setIsTerminal(v => !v)
+	return true
 })
 //TODO: this is uber buggy
 createEffect(
-    on(
-        isZenMode,
-        zen => {
-            batch(() => {
-                setShowLineNumber(!zen)
-                setShowFoldGutter(!zen)
-                setIsSideBar(!zen)
-                setIsStatusBar(!zen)
-                // Sync terminal visibility with Zen mode but remember user preference
-                if (zen) {
-                    setLastKnownIsTerminal(isTerminal())
-                    setIsTerminal(false)
-                } else {
-                    setIsTerminal(lastKnownIsTerminal())
-                }
-            })
-        },
-        { defer: true }
-    )
+	on(
+		isZenMode,
+		zen => {
+			batch(() => {
+				setShowLineNumber(!zen)
+				setShowFoldGutter(!zen)
+				setIsSideBar(!zen)
+				setIsStatusBar(!zen)
+				// Sync terminal visibility with Zen mode but remember user preference
+				if (zen) {
+					setLastKnownIsTerminal(isTerminal())
+					setIsTerminal(false)
+				} else {
+					setIsTerminal(lastKnownIsTerminal())
+				}
+			})
+		},
+		{ defer: true }
+	)
 )

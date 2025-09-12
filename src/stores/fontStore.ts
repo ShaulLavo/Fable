@@ -8,6 +8,7 @@ export const [fontFamily, setFontFamily] = makePersisted(
 		name: 'fontFamily'
 	}
 )
+export const LOGO_FONT_FAMILY = `'Stylish BC'`
 createEffect(() => {
 	setCSSVariable('--font-family', fontFamily())
 })

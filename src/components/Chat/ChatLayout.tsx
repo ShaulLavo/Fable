@@ -37,9 +37,7 @@ export const ChatLayout: ParentComponent<{
 						>
 							<div class="flex flex-col h-full min-h-0">{props.chat}</div>
 						</ResizablePanel>
-						<ResizableHandle
-							style={{ 'background-color': currentBackground(), width: '2px' }}
-						/>
+						<ResizableHandle />
 						<ResizablePanel
 							class="overflow-hidden h-full"
 							initialSize={ChatPanelSize()[0]}
@@ -57,9 +55,7 @@ export const ChatLayout: ParentComponent<{
 						>
 							{props.children}
 						</ResizablePanel>
-						<ResizableHandle
-							style={{ 'background-color': currentBackground(), width: '2px' }}
-						/>
+						<ResizableHandle />
 						<ResizablePanel
 							class="overflow-hidden h-full"
 							initialSize={ChatPanelSize()[1]}

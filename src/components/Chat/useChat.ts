@@ -8,6 +8,14 @@ import type ChatApi from './ChatApi'
 import { useFS } from '../../context/FsContext'
 import { useCurrentFile } from '../../hooks/useCurrentFile'
 import { useFileExtension } from '../../hooks/useFileExtension'
+import {
+    isModelLoading,
+    setIsModelLoading,
+    setModelLoadPercent,
+    setModelStatusText,
+    setLastModelId
+} from '../../stores/modelStatusStore'
+import { provider, localModelId, vercelModelId } from '../../stores/llmStore'
 
 const marked = new Marked(
 	markedHighlight({
@@ -28,24 +36,21 @@ export function useChat(api: ChatApi) {
     const { currentFileContent } = useCurrentFile(currentFile, openFiles)
     const { currentExtension } = useFileExtension()
 
-	const [messages, setMessages] = createSignal<Message[]>([
+	const [messages, setMessages] = createStore<Message[]>([
 		{ id: 1, content: 'Hello! How can I help you today?', role: 'assistant' }
 	])
 
 	const [formattedMessages, setFormattedMessages] = createStore<string[]>([])
 
+	// Pre-format the initial assistant message so it renders immediately
+	formatChatMessage(messages[0].content).then(formatted =>
+		setFormattedMessages(0, formatted)
+	)
+
 	const setMessageAt = (message: Message, index: number) => {
-		setMessages(prev => {
-			const newMessages = [...prev]
-			newMessages[index] = message
-			return newMessages
-		})
+		setMessages(index, message)
 		formatChatMessage(message.content).then(formatted => {
-			setFormattedMessages(prev => {
-				const newFormattedMessages = [...prev]
-				newFormattedMessages[index] = formatted
-				return newFormattedMessages
-			})
+			setFormattedMessages(index, formatted)
 		})
 	}
 
@@ -66,24 +71,34 @@ export function useChat(api: ChatApi) {
     }
 
 	const initChat = async () => {
+		// Prepare model status for status bar
+		const prov = provider()
+		const model = prov === 'vercel' ? vercelModelId() : localModelId()
+		setLastModelId(model)
+		setIsModelLoading(true)
+		setModelLoadPercent(0)
+		setModelStatusText('Initializing model…')
+
 		await api.asyncInitChat((kind, text) => {
-			if (!text.trim()) return
-			setMessageAt(
-				{
-					id: 1,
-					content: text,
-					role: 'assistant'
-				},
-				0
-			)
+			if (kind !== 'init') return
+			const t = text ?? ''
+			// Try to parse a percentage from the progress text
+			const m = t.match(/(\d{1,3})\s*%/)
+			if (m) {
+				const pct = Math.max(0, Math.min(100, parseInt(m[1], 10)))
+				setModelLoadPercent(pct)
+			}
+			if (t.trim()) setModelStatusText(t.trim())
 		})
 		setIsLoading(false)
+		setIsModelLoading(false)
+		// Keep the last status text (e.g., "Finish loading on WebGPU …") for tooltip
 	}
 
 	const sendMessage = async (message: string) => {
 		if (!message.trim()) return
 		const formatted = await formatChatMessage(message)
-		const id = messages().length + 1
+		const id = messages.length + 1
 
 		const userMessage: Message = {
 			id,
@@ -91,18 +106,18 @@ export function useChat(api: ChatApi) {
 			role: 'user'
 		}
 		batch(() => {
-			setMessageAt(userMessage, messages().length)
+			setMessageAt(userMessage, messages.length)
 			setInputValue('')
 		})
 
-		const assistantMessageId = messages().length + 1
+		const assistantMessageId = messages.length + 1
 		setMessageAt(
 			{
 				id: assistantMessageId,
 				content: '',
 				role: 'assistant'
 			},
-			messages().length
+			messages.length
 		)
 
 		await api.onGenerate(
@@ -116,7 +131,7 @@ export function useChat(api: ChatApi) {
 						content: append ? text : text,
 						role: 'assistant'
 					},
-					messages().length - 1
+					messages.length - 1
 				)
 			},
 			console.log,

@@ -48,18 +48,20 @@ export const EditorTabs: Component<EditorTabsProps> = ({ index }) => {
 	})
 
 	return (
-		<div
-			ref={tabContainer}
-			class="flex overflow-x-auto whitespace-nowrap z-50 relative"
-			style={{ height: EDITOR_TAB_HEIGHT + 'px' }}
-		>
-			<For each={tabs()}>
-				{(path, tabIndex) => (
-					<Show when={path}>
-						<Tab file={path} tabIndex={tabIndex} index={index} />
-					</Show>
-				)}
-			</For>
+		<div>
+			<div
+				ref={tabContainer}
+				class="flex overflow-x-auto whitespace-nowrap z-50 relative no-scrollbar"
+				style={{ height: EDITOR_TAB_HEIGHT + 'px', 'padding-top': '2px' }}
+			>
+				<For each={tabs()}>
+					{(path, tabIndex) => (
+						<Show when={path}>
+							<Tab file={path} tabIndex={tabIndex} index={index} />
+						</Show>
+					)}
+				</For>
+			</div>
 		</div>
 	)
 }

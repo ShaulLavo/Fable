@@ -8,19 +8,21 @@ import {
 	mainSideBarPosition,
 	setHorizontalPanelSize,
 	setVerticalPanelSize,
-	isTerminal
+	isTerminal,
+	panelGap
 } from './stores/appStateStore'
 import {
-    currentBackground,
-    dragHandleColor,
-    secondaryColor
+	currentBackground,
+	currentColor,
+	dragHandleColor,
+	secondaryColor
 } from './stores/themeStore'
 
 //
 import SearchPalette from './components/SearchBar'
 import { StatusBar } from './components/StatusBar'
 import { ResizableHandle, ResizablePanel } from './components/ui/Resizable'
-import { fontFamilyWithFallback } from './stores/fontStore'
+import { fontFamilyWithFallback, LOGO_FONT_FAMILY } from './stores/fontStore'
 import Icon from './components/ui/Icon'
 import { Tabs } from './components/ui/AlwaysRenderTabs'
 import { lazy } from 'solid-js'
@@ -85,9 +87,7 @@ export function Main(props: MainProps) {
 					)}
 				</ResizablePanel>
 
-				<ResizableHandle
-					style={{ 'background-color': currentBackground(), width: '2px' }}
-				/>
+				<ResizableHandle />
 
 				{/* Right panel */}
 				<ResizablePanel
@@ -127,55 +127,57 @@ const Workbench = () => {
 }
 
 const RightWorkbench = () => {
-    const [lastTermSplit, setLastTermSplit] = createSignal<[number, number] | null>(null)
+	const [lastTermSplit, setLastTermSplit] = createSignal<
+		[number, number] | null
+	>(null)
 
-    createEffect(() => {
-        const show = isTerminal()
-        const sizes = verticalPanelSize()
-        if (!show) {
-            if (sizes[1] !== 0) setLastTermSplit(sizes as [number, number])
-            if (sizes[1] !== 0) setVerticalPanelSize([1, 0])
-        } else {
-            if (sizes[1] === 0) setVerticalPanelSize(lastTermSplit() ?? [0.7, 0.3])
-        }
-    })
+	createEffect(() => {
+		const show = isTerminal()
+		const sizes = verticalPanelSize()
+		if (!show) {
+			if (sizes[1] !== 0) setLastTermSplit(sizes as [number, number])
+			if (sizes[1] !== 0) setVerticalPanelSize([1, 0])
+		} else {
+			if (sizes[1] === 0) setVerticalPanelSize(lastTermSplit() ?? [0.7, 0.3])
+		}
+	})
 
-    const handleStyle = () => ({
-        'background-color': currentBackground(),
-        height: '2px',
-        display: isTerminal() ? '' : 'none'
-    })
+	const handleStyle = () => ({
+		'background-color': currentBackground(),
+		width: panelGap() + 'px'
+		// display: isTerminal() ? '' : 'none'
+	})
 
-    const bottomPanelStyle = () => ({
-        display: isTerminal() ? '' : 'none'
-    })
+	const bottomPanelStyle = () => ({
+		display: isTerminal() ? '' : 'none'
+	})
 
-    return (
-        <Resizable
-            sizes={verticalPanelSize()}
-            onSizesChange={size => {
-                if (size.length !== 2) return
-                setVerticalPanelSize(size)
-            }}
-            class="w-full flex"
-            style={{
-                'background-color': currentBackground(),
-                color: secondaryColor(),
-                height: '100%',
-                overflow: 'hidden'
-            }}
-            orientation="vertical"
-            accessKey="vertical"
-        >
-            <ResizablePanel class="min-h-0">
-                <Workbench />
-            </ResizablePanel>
-            <ResizableHandle style={handleStyle()} />
-            <ResizablePanel class="min-h-[140px]" style={bottomPanelStyle()}>
-                <Show when={isTerminal()}>
-                    <Terminal class="h-full" />
-                </Show>
-            </ResizablePanel>
-        </Resizable>
-    )
+	return (
+		<Resizable
+			sizes={verticalPanelSize()}
+			onSizesChange={size => {
+				if (size.length !== 2) return
+				setVerticalPanelSize(size)
+			}}
+			class="w-full flex"
+			style={{
+				'background-color': currentBackground(),
+				color: secondaryColor(),
+				height: '100%',
+				overflow: 'hidden'
+			}}
+			orientation="vertical"
+			accessKey="vertical"
+		>
+			<ResizablePanel class="min-h-0">
+				<Workbench />
+			</ResizablePanel>
+			<ResizableHandle />
+			<ResizablePanel class="min-h-[140px]" style={bottomPanelStyle()}>
+				<Show when={isTerminal()}>
+					<Terminal class="h-full" />
+				</Show>
+			</ResizablePanel>
+		</Resizable>
+	)
 }

@@ -20,6 +20,15 @@ import {
 } from '../stores/editorStore'
 import { Git, TypeScript } from '../assets/customIcons'
 import { STATUS_BAR_HEIGHT } from '../stores/appStateStore'
+import { NumberTicker } from './ui/NumberTicker'
+import {
+	isModelLoading,
+	modelLoadPercent,
+	modelStatusText,
+	lastModelId
+} from '../stores/modelStatusStore'
+import { IconLogo } from '../assets/customIcons'
+import { LOGO_FONT_FAMILY } from '../stores/fontStore'
 
 export const DefaultDescription = (props: { description: string }) => {
 	return <div>{props.description}</div>
@@ -29,6 +38,7 @@ interface Status {
 	title: string | Component
 	description?: string
 	isLoading: boolean
+	loader?: Component
 }
 
 interface StatusBarProps {
@@ -43,6 +53,25 @@ export const StatusBar: Component<StatusBarProps> = ({ ref }) => {
 
 	const statuses = () =>
 		[
+			{
+				title: () => (
+					<IconLogo color={currentColor()} height={baseFontSize() + 2} />
+				),
+				description: isModelLoading()
+					? `Loading ${lastModelId() || 'model'}…`
+					: modelStatusText() || 'Model ready',
+				isLoading: isModelLoading(),
+				loader: () => (
+					<span class="flex items-center gap-1">
+						<NumberTicker
+							value={modelLoadPercent()}
+							startValue={0}
+							decimalPlaces={0}
+						/>
+						<span>%</span>
+					</span>
+				)
+			},
 			{
 				title: `Ln ${currentLine()},Col ${currentColumn()} ${selectionText()}`,
 				description: 'Go to Line/Column',
@@ -61,10 +90,6 @@ export const StatusBar: Component<StatusBarProps> = ({ ref }) => {
 				title: () => <Git color={currentColor()} height={baseFontSize() + 2} />,
 				description: 'File Encoding',
 				isLoading: isGitLoading()
-			},
-			{
-				title: () => <></>,
-				isLoading: false
 			}
 		] satisfies Status[]
 
@@ -80,6 +105,18 @@ export const StatusBar: Component<StatusBarProps> = ({ ref }) => {
 					height: STATUS_BAR_HEIGHT + 'px'
 				}}
 			>
+				<h1
+					style={{
+						'font-family': LOGO_FONT_FAMILY,
+						'font-size': '16px',
+						'padding-inline': '4px',
+						'padding-block': '2px',
+						color: currentColor(),
+						'background-color': currentBackground()
+					}}
+				>
+					Fable
+				</h1>
 				<ul
 					class="flex flex-1 justify-end"
 					style={{ 'font-size': baseFontSize() + 'px' }}
@@ -91,12 +128,16 @@ export const StatusBar: Component<StatusBarProps> = ({ ref }) => {
 								style={{ color: currentColor() }}
 							>
 								{status.isLoading ? (
-									<Spinner
-										type={SpinnerType.tailSpin}
-										width={baseFontSize()}
-										height={baseFontSize()}
-										color={currentColor()}
-									/>
+									status.loader ? (
+										<status.loader />
+									) : (
+										<Spinner
+											type={SpinnerType.tailSpin}
+											width={baseFontSize()}
+											height={baseFontSize()}
+											color={currentColor()}
+										/>
+									)
 								) : status.description ? (
 									<HoverCard
 										trigger={

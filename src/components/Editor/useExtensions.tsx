@@ -195,11 +195,11 @@ export const useExtensions = (
 						render(
 							() => (
 								<>
-										{isOpen ? (
-											<Icon icon="chevronDown" color={currentColor()} />
-										) : (
-											<Icon icon="chevronRight" color={currentColor()} />
-										)}
+									{isOpen ? (
+										<Icon icon="chevronDown" color={currentColor()} />
+									) : (
+										<Icon icon="chevronRight" color={currentColor()} />
+									)}
 								</>
 							),
 							fold
@@ -235,7 +235,7 @@ export const useExtensions = (
 		// Minimal help for JS: hover + completion but no TS lints
 		return isJs() ? base : [...base, tsLinterWorker()]
 	})
-	const scrollBarOpacity = 0.3
+	const scrollBarOpacity = 0.1
 	createExtension(() =>
 		EditorView.theme({
 			'.cm-content': {
@@ -268,8 +268,7 @@ export const useExtensions = (
 				height: '1rem'
 			},
 			'.cm-scroller::-webkit-scrollbar-thumb': {
-				background: getTransparentColor(currentColor(), scrollBarOpacity),
-				borderRadius: '9999px'
+				background: getTransparentColor(currentColor(), scrollBarOpacity)
 			},
 			'.cm-scroller::-webkit-scrollbar-thumb:hover': {
 				background: getTransparentColor(currentColor(), scrollBarOpacity * 2)
