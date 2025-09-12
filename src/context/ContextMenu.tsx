@@ -1,8 +1,8 @@
 import { createElementBounds, NullableBounds } from '@solid-primitives/bounds'
 import { createEffect, createSignal, For, onCleanup, Show } from 'solid-js'
-import { Dynamic, Portal } from 'solid-js/web'
+import { Portal } from 'solid-js/web'
 import { Span } from '../components/ui/Span'
-import { BASE_ICONS } from '../stores/icons'
+import Icon from '../components/ui/Icon'
 import { currentBackground, secondaryColor } from '../stores/themeStore'
 import { unwrap } from 'solid-js/store'
 
@@ -71,7 +71,7 @@ function ContextMenuItemComponent(props: {
 				<span>{props.item.label}</span>
 				<Show when={isSubMenu()}>
 					<span>
-						<Dynamic component={BASE_ICONS.chevronRight} />
+						<Icon icon="chevronRight" />
 					</span>
 				</Show>
 			</Span>

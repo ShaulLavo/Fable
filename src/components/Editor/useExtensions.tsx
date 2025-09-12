@@ -57,11 +57,11 @@ import { python } from '@codemirror/lang-python'
 
 //@ts-ignore no types :(
 import rainbowBrackets from 'rainbowbrackets'
-import { Dynamic, render } from 'solid-js/web'
+import { render } from 'solid-js/web'
 import { createInnerZoom } from '../../hooks/createInnerZoom'
 import { useCurrentFile } from '../../hooks/useCurrentFile'
 import { useOPFS } from '../../hooks/useOPFS'
-import { BASE_ICONS } from '../../stores/icons'
+import Icon from '../ui/Icon'
 import { createColorCycler, getTransparentColor } from '../../utils/color'
 import { autoHide } from '../../utils/dom'
 import { createKeymap } from '../../utils/keymap'
@@ -195,17 +195,11 @@ export const useExtensions = (
 						render(
 							() => (
 								<>
-									{isOpen ? (
-										<Dynamic
-											component={BASE_ICONS.chevronDown}
-											color={currentColor()}
-										/>
-									) : (
-										<Dynamic
-											component={BASE_ICONS.chevronRight}
-											color={currentColor()}
-										/>
-									)}
+										{isOpen ? (
+											<Icon icon="chevronDown" color={currentColor()} />
+										) : (
+											<Icon icon="chevronRight" color={currentColor()} />
+										)}
 								</>
 							),
 							fold

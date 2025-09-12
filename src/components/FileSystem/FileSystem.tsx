@@ -4,11 +4,10 @@ import { EMPTY_NODE_NAME } from '../../consts/FS'
 import { useFS } from '../../context/FsContext'
 import { createInnerZoom } from '../../hooks/createInnerZoom'
 import { useOPFS } from '../../hooks/useOPFS'
-import { BASE_ICONS } from '../../stores/icons'
+import Icon from '../ui/Icon'
 import { secondaryColor, secondaryBackground } from '../../stores/themeStore'
 import { Span } from '../ui/Span'
 import { FileSystemTree } from './FileSystemTree'
-import { Dynamic } from 'solid-js/web'
 import { GlobalLoader, Loader } from '../GlobalLoader'
 import { isFsLoading } from '../../stores/appStateStore'
 
@@ -57,7 +56,7 @@ export function FileSystem(props: FileSystemProps) {
 						onClick={() => addNode({ name: EMPTY_NODE_NAME })}
 						title="Add File"
 					>
-						<Dynamic component={BASE_ICONS.addFile} />
+						<Icon icon="addFile" />
 					</Span>
 					<Span
 						enableHover
@@ -65,7 +64,7 @@ export function FileSystem(props: FileSystemProps) {
 						onClick={() => addNode({ name: EMPTY_NODE_NAME, children: [] })}
 						title="Add Folder"
 					>
-						<Dynamic component={BASE_ICONS.addFolder} />
+						<Icon icon="addFolder" />
 					</Span>
 					<Span
 						enableHover
@@ -73,7 +72,7 @@ export function FileSystem(props: FileSystemProps) {
 						onClick={() => removeNode(currentNode())}
 						title="Delete"
 					>
-						<Dynamic component={BASE_ICONS.trash} />
+						<Icon icon="trash" />
 					</Span>
 					<Span
 						enableHover
@@ -81,7 +80,7 @@ export function FileSystem(props: FileSystemProps) {
 						onClick={() => beginRename(currentNode())}
 						title="Rename"
 					>
-						<Dynamic component={BASE_ICONS.rename} />
+						<Icon icon="rename" />
 					</Span>
 				</div>
 			</div>

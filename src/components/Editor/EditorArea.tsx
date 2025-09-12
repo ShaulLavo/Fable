@@ -1,6 +1,5 @@
 import Resizable from '@corvu/resizable'
 import { For, Show, createEffect, createMemo, createSignal } from 'solid-js'
-import { Dynamic } from 'solid-js/web'
 import { ResizableHandle, ResizablePanel } from '../ui/Resizable'
 import { Editor } from './Editor'
 import { EditorNav } from './EditorNav'
@@ -20,7 +19,7 @@ import {
 	setIsZenMode,
 	updateEditorPanelSize
 } from '../../stores/appStateStore'
-import { BASE_ICONS } from '../../stores/icons'
+import Icon from '../ui/Icon'
 import { cn } from '../../utils/cn'
 import { useCurrentFile } from '../../hooks/useCurrentFile'
 
@@ -92,7 +91,7 @@ function EditorLayout(_props: EditorLayoutProps) {
 									style={{ background: currentBackground() }}
 								>
 									<button onClick={() => setIsZenMode(!isZenMode())}>
-										<Dynamic component={BASE_ICONS.zen} />
+										<Icon icon="zen" />
 									</button>
 								</div>
 							</div>

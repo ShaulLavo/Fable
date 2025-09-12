@@ -1,6 +1,5 @@
 import { createSignal, onMount } from 'solid-js'
-import { Dynamic } from 'solid-js/web'
-import { BASE_ICONS } from '../../stores/icons'
+import Icon from '../ui/Icon'
 import { Button } from '../ui/Button'
 import {
 	currentBackground,
@@ -72,7 +71,7 @@ export function ChatInput(props: ChatInputProps) {
 						color: props.value.trim() ? currentColor() : secondaryColor()
 					}}
 				>
-					<Dynamic component={BASE_ICONS.send} />
+					<Icon icon="send" />
 				</Button>
 			</div>
 		</div>

@@ -1,8 +1,7 @@
 import { JSX } from 'solid-js'
 import { FSNode, isFolder } from '../../types/FS.types'
-import { BASE_ICONS } from '../../stores/icons'
+import Icon from '../ui/Icon'
 import { secondaryBackground } from '../../stores/themeStore'
-import { Dynamic } from 'solid-js/web'
 
 export const Arrow = (props: {
 	node: FSNode
@@ -24,9 +23,9 @@ export const Arrow = (props: {
 			}}
 		>
 			{props.node.isOpen ? (
-				<Dynamic component={BASE_ICONS.chevronDown} size={props.fontSize} />
+				<Icon icon="chevronDown" size={props.fontSize} />
 			) : (
-				<Dynamic component={BASE_ICONS.chevronRight} size={props.fontSize} />
+				<Icon icon="chevronRight" size={props.fontSize} />
 			)}
 		</span>
 	)

@@ -1,12 +1,13 @@
 import { createSignal, JSX } from 'solid-js'
 import { Dynamic } from 'solid-js/web'
-import { BASE_ICONS, getNodeIcon } from '../../stores/icons'
+import { getNodeIcon } from '../../stores/icons'
 import { currentColor } from '../../stores/themeStore'
 import { Span } from './Span'
 import { useFS } from '../../context/FsContext'
 import { getNode } from '../../service/FS.service'
 import { VsClose } from 'solid-icons/vs'
 import { dirtyVersion, isDirty } from '../../stores/dirtyStore'
+import Icon from './Icon'
 
 type RefProp = HTMLDivElement | ((el: HTMLDivElement) => void)
 
@@ -65,11 +66,7 @@ export function TabChip(props: TabChipProps) {
 				}}
 				aria-label="Unsaved changes"
 			>
-				<Dynamic
-					size={10}
-					color={currentColor()}
-					component={BASE_ICONS.dirty}
-				/>
+				<Icon size={10} color={currentColor()} icon="dirty" />
 			</span>
 			<button
 				onClick={e => props.onClose?.(e)}

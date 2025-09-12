@@ -9,13 +9,11 @@ import {
 } from 'solid-js'
 import ChatInner from './ChatInner'
 import {
-	currentBackground,
-	currentColor,
-	dragHandleColor,
-	secondaryBackground
+    currentBackground,
+    currentColor,
+    dragHandleColor,
+    secondaryBackground
 } from '../../stores/themeStore'
-import { BASE_ICONS } from '../../stores/icons'
-import { Dynamic } from 'solid-js/web'
 import { isStatusBar } from '../../stores/appStateStore'
 import { cn } from '../../utils/cn'
 import {

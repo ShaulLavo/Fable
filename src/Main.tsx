@@ -11,17 +11,17 @@ import {
 	isTerminal
 } from './stores/appStateStore'
 import {
-	currentBackground,
-	dragHandleColor,
-	secondaryColor
+    currentBackground,
+    dragHandleColor,
+    secondaryColor
 } from './stores/themeStore'
 
-import { Dynamic } from 'solid-js/web'
+//
 import SearchPalette from './components/SearchBar'
 import { StatusBar } from './components/StatusBar'
 import { ResizableHandle, ResizablePanel } from './components/ui/Resizable'
 import { fontFamilyWithFallback } from './stores/fontStore'
-import { BASE_ICONS } from './stores/icons'
+import Icon from './components/ui/Icon'
 import { Tabs } from './components/ui/AlwaysRenderTabs'
 import { lazy } from 'solid-js'
 const Chat = lazy(() =>
@@ -40,13 +40,13 @@ export function Main(props: MainProps) {
 	const tabs = [
 		{
 			id: '1',
-			icon: <Dynamic component={BASE_ICONS.file} />,
+			icon: <Icon icon="file" />,
 			label: 'EXPLORER',
 			content: <FileSystem />
 		},
 		{
 			id: '2',
-			icon: <Dynamic class="h-full" component={BASE_ICONS.chat} />,
+			icon: <Icon class="h-full" icon="chat" />,
 			label: 'CHAT',
 			content: <Chat />
 		}
