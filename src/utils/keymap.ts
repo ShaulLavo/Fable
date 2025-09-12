@@ -5,7 +5,11 @@ import { formatCode, getConfigFromExt } from './format'
 // import { code, setCode } from '~/stores/editorStore'
 import { File, Folder } from '../types/FS.types'
 import { getNode } from '../service/FS.service'
-import { setIsSearchBar, toggleSideBar, toggleTerminal } from '../stores/appStateStore'
+import {
+	setIsSearchBar,
+	toggleSideBar,
+	toggleTerminal
+} from '../stores/appStateStore'
 import hotkeys from 'hotkeys-js'
 import { Accessor } from 'solid-js'
 import { themedToast } from './notify'
@@ -20,6 +24,7 @@ hotkeys('ctrl+j,command+j', e => {
 	e.preventDefault()
 	toggleTerminal()
 })
+// Editor-scoped Mod-J is added in createKeymap below
 // hotkeys('ctrl+p', toggleSideBar)
 
 const overrideMap = {
@@ -44,6 +49,16 @@ export function createKeymap(
 	skipSync: (b: boolean) => void
 ) {
 	const additionalKeymap = [
+		{
+			key: 'Mod-j',
+			run: () => {
+				toggleTerminal()
+				return true
+			},
+			preventDefault: true,
+			stopPropagation: false,
+			scope: 'editor'
+		},
 		{
 			key: 'Shift-Alt-f',
 			run: () => {
@@ -93,7 +108,7 @@ export function createKeymap(
 				const hadChanges = isDirty(path)
 				Promise.resolve(saveFile(node as File, currentCode)).then(() => {
 					if (hadChanges) {
-							themedToast(`Saved ${node.name}`)
+						themedToast(`Saved ${node.name}`)
 						clearDirty(path)
 					}
 					// Update baseline to the freshly saved content

@@ -261,21 +261,31 @@ export const useExtensions = (
 				justifyContent: 'right'
 			},
 			'.cm-foldGutter': {},
-			'.cm-scroller::-webkit-scrollbar-thumb': {
-				background: getTransparentColor(currentColor(), scrollBarOpacity)
-			},
 
+			// Match horizontal scrollbar styling to vertical
 			'.cm-scroller::-webkit-scrollbar': {
-				width: '1rem',
-				height: '4rem'
+				width: '1rem', // vertical thickness
+				height: '1rem' // horizontal thickness (was too large)
 			},
-
+			'.cm-scroller::-webkit-scrollbar:vertical': {
+				width: '1rem'
+			},
+			'.cm-scroller::-webkit-scrollbar:horizontal': {
+				height: '1rem'
+			},
+			'.cm-scroller::-webkit-scrollbar-thumb': {
+				background: getTransparentColor(currentColor(), scrollBarOpacity),
+				borderRadius: '9999px'
+			},
 			'.cm-scroller::-webkit-scrollbar-thumb:hover': {
 				background: getTransparentColor(currentColor(), scrollBarOpacity * 2)
 			},
-
 			'.cm-scroller::-webkit-scrollbar-track': {
-				// background: 'red'
+				background: 'transparent'
+			},
+			// Make the corner where scrollbars meet transparent
+			'.cm-scroller::-webkit-scrollbar-corner': {
+				background: 'transparent'
 			}
 		})
 	)
