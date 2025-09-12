@@ -110,11 +110,11 @@ export class NodeRuntime {
 	private createNodeContext(baseDir: string, filename = '<repl>') {
 		const sandbox: Record<string, any> = Object.create(null)
 		const req = this.makeRequire(baseDir)
-		const mod = { exports: {} as any }
+		const mod = { exports: {} }
 		Object.assign(sandbox, {
-			global: undefined as any,
-			GLOBAL: undefined as any,
-			root: undefined as any,
+			global: undefined,
+			GLOBAL: undefined,
+			root: undefined,
 			console: this.makeConsole(),
 			require: req,
 			module: mod,
@@ -139,11 +139,11 @@ export class NodeRuntime {
 			const c = this.createNodeContext(baseDir, filename)
 			try {
 				// @ts-ignore
-				delete (c as any).Infinity
+				delete c.Infinity
 				// @ts-ignore
-				delete (c as any).NaN
+				delete c.NaN
 				// @ts-ignore
-				delete (c as any).undefined
+				delete c.undefined
 			} catch {}
 			const wrapper = `((exports, require, module, __filename, __dirname) => {\n${code}\n})`
 			const fn = vm.runInContext(wrapper, c, { filename }) as unknown as (
@@ -153,8 +153,8 @@ export class NodeRuntime {
 				f: string,
 				d: string
 			) => void
-			const req = (c as any).require ?? this.makeRequire(baseDir)
-			const mod = (c as any).module ?? { exports: {} }
+			const req = c.require ?? this.makeRequire(baseDir)
+			const mod = c.module ?? { exports: {} }
 			fn(mod.exports, req, mod, filename, baseDir)
 		} catch (e: any) {
 			this.io.writeln(String(e?.message || e))
@@ -201,11 +201,11 @@ export class NodeRuntime {
 				this.nodeCtx = this.createNodeContext(baseDir, '<repl>')
 			try {
 				// @ts-ignore
-				delete (this.nodeCtx as any).Infinity
+				delete this.nodeCtx.Infinity
 				// @ts-ignore
-				delete (this.nodeCtx as any).NaN
+				delete this.nodeCtx.NaN
 				// @ts-ignore
-				delete (this.nodeCtx as any).undefined
+				delete this.nodeCtx.undefined
 			} catch {}
 			const code = this.transformReplInput(line)
 			const result = vm.runInContext(code, this.nodeCtx, { filename: '<repl>' })
@@ -361,7 +361,7 @@ export class NodeRuntime {
 			'__dirname',
 			code
 		)
-		const mod = { exports: {} as any }
+		const mod = { exports: {} }
 		const req = this.createGraphRequire(file)
 		fn(mod.exports, req, mod, file, path.dirname(file))
 		entry.exports = mod.exports

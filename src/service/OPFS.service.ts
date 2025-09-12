@@ -99,7 +99,7 @@ async function removeEntryAtPath(path: string) {
 		dir = await dir.getDirectoryHandle(p, { create: false })
 	}
 	// Use recursive: true to handle non-empty directories
-	await (dir as any).removeEntry(name, { recursive: true })
+	await dir.removeEntry(name, { recursive: true })
 }
 
 const remove = async (node: FSNode) => {
@@ -337,7 +337,7 @@ export async function list(
 	return entries.map(e => ({
 		name: e.name,
 		kind: e.kind as 'file' | 'dir',
-		path: (e as any).path
+		path: e.path
 	}))
 }
 

@@ -45,7 +45,8 @@ import {
 import {
 	currentBackground,
 	currentColor,
-	currentTheme
+	currentTheme,
+	isDark
 } from '../../stores/themeStore'
 import { extensionMap } from '../../utils/format'
 
@@ -61,7 +62,7 @@ import { createInnerZoom } from '../../hooks/createInnerZoom'
 import { useCurrentFile } from '../../hooks/useCurrentFile'
 import { useOPFS } from '../../hooks/useOPFS'
 import { BASE_ICONS } from '../../stores/icons'
-import { createColorCycler } from '../../utils/color'
+import { createColorCycler, getTransparentColor } from '../../utils/color'
 import { autoHide } from '../../utils/dom'
 import { createKeymap } from '../../utils/keymap'
 import { updateDirtyForPath } from '../../stores/dirtyStore'
@@ -83,6 +84,7 @@ export const useExtensions = (
 	const OPFS = useOPFS()
 	const {
 		isTs,
+		isJs,
 		isPython,
 		isJSON,
 		isHtml,
@@ -122,20 +124,20 @@ export const useExtensions = (
 
 	const baseExtensions = [
 		EditorView.updateListener.of((update: ViewUpdate) => {
-            if (update.docChanged) {
-                const { doc } = update.state
-                setEditorHight(Math.max(doc.lines * 13, 13))
-                const newText = doc.toString()
-                setCode(newText)
-                // Skip programmatic updates we annotate via ProgrammaticChange
-                const isProgrammatic = update.transactions.some(
-                  tr => tr.annotation(ProgrammaticChange) === true
-                )
-                if (!isProgrammatic) {
-                  updateDirtyForPath(currentFilePath(), newText)
-                }
-            }
-        }),
+			if (update.docChanged) {
+				const { doc } = update.state
+				setEditorHight(Math.max(doc.lines * 13, 13))
+				const newText = doc.toString()
+				setCode(newText)
+				// Skip programmatic updates we annotate via ProgrammaticChange
+				const isProgrammatic = update.transactions.some(
+					tr => tr.annotation(ProgrammaticChange) === true
+				)
+				if (!isProgrammatic) {
+					updateDirtyForPath(currentFilePath(), newText)
+				}
+			}
+		}),
 		highlightSpecialChars(),
 		history(),
 		drawSelection(),
@@ -231,14 +233,15 @@ export const useExtensions = (
 	createExtension(() => {
 		if (!isTs() || !isWorkerReady() || !worker || !currentFilePath()) return []
 
-		const tsExtensions = [
-			tsFacetWorker.of({ worker: worker as any, path: currentFilePath()! }),
+		const base = [
+			tsFacetWorker.of({ worker: worker, path: currentFilePath()! }),
 			tsSyncWorker(),
-			tsLinterWorker(),
 			tsHoverWorker()
 		]
-		return tsExtensions
+		// Minimal help for JS: hover + completion but no TS lints
+		return isJs() ? base : [...base, tsLinterWorker()]
 	})
+	const scrollBarOpacity = 0.3
 	createExtension(() =>
 		EditorView.theme({
 			'.cm-content': {
@@ -257,7 +260,23 @@ export const useExtensions = (
 				alignItems: 'center',
 				justifyContent: 'right'
 			},
-			'.cm-foldGutter': {}
+			'.cm-foldGutter': {},
+			'.cm-scroller::-webkit-scrollbar-thumb': {
+				background: getTransparentColor(currentColor(), scrollBarOpacity)
+			},
+
+			'.cm-scroller::-webkit-scrollbar': {
+				width: '1rem',
+				height: '4rem'
+			},
+
+			'.cm-scroller::-webkit-scrollbar-thumb:hover': {
+				background: getTransparentColor(currentColor(), scrollBarOpacity * 2)
+			},
+
+			'.cm-scroller::-webkit-scrollbar-track': {
+				// background: 'red'
+			}
 		})
 	)
 	createEffect(

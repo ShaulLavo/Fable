@@ -21,6 +21,13 @@ import { useFileExtension } from '../../hooks/useFileExtension'
 import { useExtensions } from './useExtensions'
 import { inlineSuggestion } from 'codemirror-extension-inline-suggestion'
 import { llmSuggest } from '../../stores/llmStore'
+import { terminalBounds } from '../../stores/terminalStore'
+import {
+	CURRENT_PATH_BAR_HEIGHT,
+	EDITOR_TAB_HEIGHT,
+	isStatusBar,
+	STATUS_BAR_HEIGHT
+} from '../../stores/appStateStore'
 
 export interface EditorProps {
 	defaultTheme?: ThemeKey
@@ -50,11 +57,11 @@ export const Editor = ({
 			const after = state.sliceDoc(pos, Math.min(state.doc.length, pos + 400))
 			const prompt =
 				'You are a code completion engine. Suggest the next short insertion to help complete the code at the cursor. Respond with only the suggested text, no explanations.' +
-				"\n<before>\n" +
+				'\n<before>\n' +
 				before +
-				"\n</before>\n<after>\n" +
+				'\n</before>\n<after>\n' +
 				after +
-				"\n</after>\nSuggestion:"
+				'\n</after>\nSuggestion:'
 			const suggestion = await llmSuggest(prompt)
 			return (suggestion || '').trim()
 		} catch (e) {
@@ -132,7 +139,13 @@ export const Editor = ({
 				class="border-b-2"
 				id="editor"
 				style={{
-					height: window.innerHeight - 20 + 'px'
+					height:
+						window.innerHeight -
+						(isStatusBar() ? STATUS_BAR_HEIGHT : 0) -
+						EDITOR_TAB_HEIGHT -
+						CURRENT_PATH_BAR_HEIGHT -
+						(terminalBounds?.height ?? 0) +
+						'px'
 				}}
 				ref={ref => editorRefs.push(ref)}
 			/>

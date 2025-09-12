@@ -42,13 +42,13 @@ export function ChatInput(props: ChatInputProps) {
 		<div
 			class="border-t p-3 shrink-0"
 			style={{
-				'border-color': dragHandleColor()
+				'border-color': currentBackground()
 			}}
 		>
 			<div
 				class={`flex items-center rounded-lg border`}
 				style={{
-					'border-color': isFocused() ? currentColor() : dragHandleColor()
+					'border-color': isFocused() ? currentColor() : currentBackground()
 				}}
 			>
 				<textarea

@@ -49,7 +49,7 @@ export const Chat = () => {
 	// Load once on mount (deferred to idle), and refresh if provider/model changes
 	onMount(() => {
 		if ('requestIdleCallback' in window) {
-			;(window as any).requestIdleCallback(() => void loadApi())
+			window.requestIdleCallback(() => void loadApi())
 		} else {
 			setTimeout(() => void loadApi(), 0)
 		}
@@ -67,7 +67,10 @@ export const Chat = () => {
 			class={cn('flex flex-col h-full min-h-0 relative flex-1', {})}
 			style={{ 'background-color': currentBackground() }}
 		>
-			<Show when={api()} fallback={<div class="p-3 opacity-80 text-sm">Loading chat…</div>}>
+			<Show
+				when={api()}
+				fallback={<div class="p-3 opacity-80 text-sm">Loading chat…</div>}
+			>
 				<ChatInner api={api()!} />
 			</Show>
 		</div>

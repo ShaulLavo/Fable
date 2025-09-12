@@ -52,9 +52,7 @@ async function* walk(
 	dir: FileSystemDirectoryHandle,
 	currentPath: string
 ): AsyncGenerator<{ path: string; handle: FileSystemHandle }, void, unknown> {
-	for await (const entry of (
-		dir as any
-	).values() as AsyncIterable<FileSystemHandle>) {
+	for await (const entry of dir.values() as AsyncIterable<FileSystemHandle>) {
 		const childPath =
 			currentPath === '/' ? `/${entry.name}` : `${currentPath}/${entry.name}`
 		if (entry.kind === 'directory') {
@@ -157,6 +155,32 @@ export async function createOPFSSystem(
 		return memWrites.get(path)
 	}
 
+	// Resolve overlay (TS lib) files regardless of path variant
+	function overlayGet(path: string): string | undefined {
+		// direct hit
+		if (overlayFiles.has(path)) return overlayFiles.get(path)
+		// try without leading slash
+		if (path.startsWith('/')) {
+			const noSlash = path.slice(1)
+			if (overlayFiles.has(noSlash)) return overlayFiles.get(noSlash)
+		}
+		// try mapping '/lib/lib.xxx.d.ts' -> '/lib.xxx.d.ts'
+		if (path.startsWith('/lib/')) {
+			const alt = '/' + basename(path)
+			if (overlayFiles.has(alt)) return overlayFiles.get(alt)
+			const noSlash = alt.slice(1)
+			if (overlayFiles.has(noSlash)) return overlayFiles.get(noSlash)
+		}
+		// try mapping '/node_modules/typescript/lib/lib.xxx.d.ts' -> '/lib.xxx.d.ts'
+		if (path.includes('/node_modules/typescript/lib/')) {
+			const alt = '/' + basename(path)
+			if (overlayFiles.has(alt)) return overlayFiles.get(alt)
+			const noSlash = alt.slice(1)
+			if (overlayFiles.has(noSlash)) return overlayFiles.get(noSlash)
+		}
+		return undefined
+	}
+
 	function writeToCacheAndPersist(path: string, data: string) {
 		contentCache.set(path, data)
 		memWrites.delete(path)
@@ -205,7 +229,12 @@ export async function createOPFSSystem(
 		realpath: p => normPath(p),
 		fileExists: p => {
 			p = normPath(p)
-			return overlayFiles.has(p) || existsFiles.has(p) || memWrites.has(p)
+			return (
+				overlayFiles.has(p) ||
+				!!overlayGet(p) ||
+				existsFiles.has(p) ||
+				memWrites.has(p)
+			)
 		},
 		directoryExists: p => {
 			p = normPath(p)
@@ -223,12 +252,14 @@ export async function createOPFSSystem(
 		},
 		readFile: (p, _encoding) => {
 			p = normPath(p)
-			if (overlayFiles.has(p)) return overlayFiles.get(p)
+			const ov = overlayGet(p)
+			if (ov !== undefined) return ov
 			return readFromCache(p)
 		},
 		getFileSize: p => {
 			p = normPath(p)
-			if (overlayFiles.has(p)) return overlayFiles.get(p)!.length
+			const ov = overlayGet(p)
+			if (ov !== undefined) return ov.length
 			const mem = memWrites.get(p)
 			if (mem) return mem.length
 			const cached = contentCache.get(p)
@@ -255,11 +286,12 @@ export async function createOPFSSystem(
 			;(async () => {
 				try {
 					const parentDir = await getDir(parent)
-					await (parentDir as any).removeEntry(basename(p))
+					await parentDir.removeEntry(basename(p))
 				} catch {}
 			})()
 		},
-		getExecutingFilePath: () => '/worker',
+		// Make TS default lib resolution land under '/lib'
+		getExecutingFilePath: () => '/lib/tsserver.js',
 		getDirectories: p => {
 			p = normPath(p)
 			const dn = dirIndex.get(p)
@@ -271,7 +303,15 @@ export async function createOPFSSystem(
 			const all = new Set<string>()
 			// overlay files first
 			for (const k of overlayFiles.keys()) {
+				// Direct prefix match
 				if (k.startsWith(directory === '/' ? '/' : directory + '/')) all.add(k)
+				// Special-case: expose '/lib.xxx.d.ts' under '/lib'
+				if (
+					directory === '/lib' &&
+					(k.startsWith('/lib.') || k.includes('/node_modules/typescript/lib/'))
+				) {
+					all.add('/lib/' + basename(k))
+				}
 			}
 			// opfs indexed files
 			for (const f of listFilesUnder(directory)) all.add(f)
@@ -288,7 +328,7 @@ export async function createOPFSSystem(
 
 	// Expose a small escape hatch so the main thread can request
 	// that we release any SyncAccessHandles for a given path (file or dir)
-	;(system as any).opfsRelease = (_p: string) => {}
+	system.opfsRelease = (_p: string) => {}
 
 	return system
 }

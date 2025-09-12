@@ -1,35 +1,42 @@
-import { createEffect, onCleanup, onMount } from 'solid-js'
-import '@xterm/xterm/css/xterm.css'
-import { xTermTheme } from '../../stores/themeStore'
-import { fontFamilyWithFallback } from '../../stores/fontStore'
-import { Terminal as XTerm } from '@xterm/xterm'
+import { createElementBounds } from '@solid-primitives/bounds'
 import { FitAddon } from '@xterm/addon-fit'
+import { Terminal as XTerm } from '@xterm/xterm'
+import '@xterm/xterm/css/xterm.css'
+import { createEffect, onCleanup, onMount } from 'solid-js'
+import { fontFamilyWithFallback } from '../../stores/fontStore'
+import {
+	setFitAddon,
+	setTerminal,
+	setTerminalContainer,
+	setTerminalController,
+	terminal,
+	terminalContainer
+} from '../../stores/terminalStore'
+import { xTermTheme } from '../../stores/themeStore'
 import { TerminalController } from './controller'
 
 type Props = { class?: string }
 
 export function Terminal(props: Props) {
-	let container!: HTMLDivElement
-	let term: XTerm
-	let fit: FitAddon
-	let controller: TerminalController | null = null
-
 	onMount(async () => {
-		term = new XTerm({
+		const term = new XTerm({
 			fontFamily: fontFamilyWithFallback(),
 			cursorBlink: true,
 			allowProposedApi: true,
 			scrollback: 5000,
 			theme: xTermTheme()
 		})
-		fit = new FitAddon()
+		setTerminal(term)
+		const fit = new FitAddon()
+		setFitAddon(fit)
 		term.loadAddon(fit)
-		term.open(container)
+		term.open(terminalContainer()!)
 		queueMicrotask(() => fit.fit())
 		const ro = new ResizeObserver(() => fit.fit())
-		ro.observe(container)
+		ro.observe(terminalContainer()!)
 
-		controller = new TerminalController(term)
+		const controller = new TerminalController(term)
+		setTerminalController(controller)
 		const disp = term.onData(d => controller!.handleData(d))
 		controller.intro()
 
@@ -37,25 +44,25 @@ export function Terminal(props: Props) {
 			disp.dispose()
 			ro.disconnect()
 			term.dispose()
-			controller = null
+			setTerminalController(null)
 		})
 	})
 
 	createEffect(() => {
 		try {
-			term && (term.options.theme = xTermTheme())
+			terminal() && (terminal()!.options.theme = xTermTheme())
 		} catch {}
 	})
 	createEffect(() => {
 		try {
-			term && (term.options.fontFamily = fontFamilyWithFallback())
+			terminal() && (terminal()!.options.fontFamily = fontFamilyWithFallback())
 		} catch {}
 	})
 
 	return (
 		<div
-			ref={container}
-			class={`w-full h-full min-h-[120px] rounded-md border border-neutral-700 overflow-hidden ${
+			ref={setTerminalContainer}
+			class={`w-full h-full min-h-[120px] rounded-md  overflow-hidden ${
 				props.class ?? ''
 			}`}
 		/>

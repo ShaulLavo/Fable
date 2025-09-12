@@ -93,7 +93,7 @@ export class TerminalController {
 					node: this.node
 				})
 					.then(res => {
-						if (res && (res as any).enterNodeRepl) {
+						if (res && res.enterNodeRepl) {
 							this.nodeMode = true
 						}
 					})

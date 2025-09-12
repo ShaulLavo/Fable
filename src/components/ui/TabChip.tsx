@@ -37,10 +37,10 @@ export function TabChip(props: TabChipProps) {
 		<Span
 			selected={!!props.selected}
 			title={props.path}
-			ref={props.ref as any}
+			ref={props.ref}
 			onMouseOver={() => setIsHovered(true)}
 			onMouseOut={() => setIsHovered(false)}
-			onContextMenu={props.onContextMenu as any}
+			onContextMenu={props.onContextMenu}
 			onClick={() => props.onClick?.()}
 			class={`px-1.5 py-1.5 focus:outline-none text-xs items-center flex cursor-pointer relative z-50 box-border border-t-1 gap-1`}
 			style={{

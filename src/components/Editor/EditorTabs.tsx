@@ -19,6 +19,7 @@ import { useOPFS } from '../../hooks/useOPFS'
 import { File, isFolder } from '../../types/FS.types'
 import { isDirty, clearDirty, setBaseline } from '../../stores/dirtyStore'
 import { openConfirm } from '../ui/ConfirmDialog'
+import { EDITOR_TAB_HEIGHT } from '../../stores/appStateStore'
 
 interface EditorTabsProps {
 	index: number
@@ -50,6 +51,7 @@ export const EditorTabs: Component<EditorTabsProps> = ({ index }) => {
 		<div
 			ref={tabContainer}
 			class="flex overflow-x-auto whitespace-nowrap z-50 relative"
+			style={{ height: EDITOR_TAB_HEIGHT + 'px' }}
 		>
 			<For each={tabs()}>
 				{(path, tabIndex) => (
@@ -71,11 +73,11 @@ const Tab = ({
 	tabIndex: Accessor<number>
 	index: number
 }) => {
-    const { openFiles, fs, currentPath, setCurrentNode, currentNode, tabs } =
+	const { openFiles, fs, currentPath, setCurrentNode, currentNode, tabs } =
 		useFS()
-  const { showContextMenu } = useContextMenu()
-  const OPFS = useOPFS()
-  const isSelected = () => currentNode().path === file
+	const { showContextMenu } = useContextMenu()
+	const OPFS = useOPFS()
+	const isSelected = () => currentNode().path === file
 
 	let tabRef: HTMLDivElement = null!
 
@@ -221,7 +223,9 @@ const Tab = ({
 			selected={isSelected()}
 			ref={tabRef}
 			width={160}
-			onContextMenu={e => showContextMenu(e as unknown as MouseEvent, contextMenu)}
+			onContextMenu={e =>
+				showContextMenu(e as unknown as MouseEvent, contextMenu)
+			}
 			onClick={() => {
 				batch(() => {
 					const node = getNode(fs, file) ?? fs

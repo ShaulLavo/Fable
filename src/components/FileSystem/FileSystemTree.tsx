@@ -1,4 +1,12 @@
-import { batch, Component, createEffect, createSignal, For, on, Show } from 'solid-js'
+import {
+	batch,
+	Component,
+	createEffect,
+	createSignal,
+	For,
+	on,
+	Show
+} from 'solid-js'
 
 import { isDev } from 'solid-js/web'
 import { EMPTY_NODE_NAME } from '../../consts/FS'
@@ -33,7 +41,7 @@ export interface FileSystemTreeProps {
 export const FileSystemTree: Component<FileSystemTreeProps> = props => {
 	if (!isDev && SYSTEM_PATHS.includes(props.node.path)) return null
 
-    const {
+	const {
 		setCurrentFolder,
 		setIsOpen,
 		setCurrentNode,
@@ -55,21 +63,21 @@ export const FileSystemTree: Component<FileSystemTreeProps> = props => {
 
 	const { showContextMenu } = useContextMenu()
 
-    const isTemp = () => props.node.name === EMPTY_NODE_NAME
-    const [isEditing, setIsEditing] = createSignal(isTemp())
-    // Enter edit mode if this node is globally marked for rename
-    createEffect(
-        on(editingPath, path => {
-            setIsEditing(isTemp() || path === props.node.path)
-        })
-    )
-    const [editingValue, setEditingValue] = createSignal('')
-    // Populate input when entering edit mode
-    createEffect(() => {
-        if (isEditing()) {
-            setEditingValue(isTemp() ? '' : props.node.name)
-        }
-    })
+	const isTemp = () => props.node.name === EMPTY_NODE_NAME
+	const [isEditing, setIsEditing] = createSignal(isTemp())
+	// Enter edit mode if this node is globally marked for rename
+	createEffect(
+		on(editingPath, path => {
+			setIsEditing(isTemp() || path === props.node.path)
+		})
+	)
+	const [editingValue, setEditingValue] = createSignal('')
+	// Populate input when entering edit mode
+	createEffect(() => {
+		if (isEditing()) {
+			setEditingValue(isTemp() ? '' : props.node.name)
+		}
+	})
 
 	const onClick = (e: MouseEvent) => {
 		e.stopPropagation()
@@ -132,14 +140,14 @@ export const FileSystemTree: Component<FileSystemTreeProps> = props => {
 		},
 		{ label: 'themes', subMenuItems: themes }
 	]
-    const onDoubleClick = (e: MouseEvent) => {
-        e.stopPropagation()
-        setEditingValue(props.node.name)
-        setIsEditing(true)
-        beginRename(props.node)
-    }
+	const onDoubleClick = (e: MouseEvent) => {
+		e.stopPropagation()
+		setEditingValue(props.node.name)
+		setIsEditing(true)
+		beginRename(props.node)
+	}
 
-    return (
+	return (
 		<div
 			ref={setDropzone}
 			onContextMenu={e => {

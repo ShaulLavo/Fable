@@ -15,8 +15,7 @@ import { isFsLoading } from '../../stores/appStateStore'
 interface FileSystemProps {}
 
 export function FileSystem(props: FileSystemProps) {
-	const { fs, addNode, removeNode, currentNode, beginRename } = useFS() as any
-	const OPFS = useOPFS()
+	const { fs, addNode, removeNode, currentNode, beginRename } = useFS()
 	const [editorContainer, setEditorContainer] = createSignal<HTMLDivElement>(
 		null!
 	)

@@ -23,17 +23,26 @@ function toEncodingOption(options?: any): { encoding?: string } | undefined {
 }
 
 function nodeify<Args extends any[], R>(fn: (...args: Args) => Promise<R>) {
-    return (...args: any[]) => {
-        const cb: Callback<R> | undefined =
-            typeof args[args.length - 1] === 'function' ? args.pop() : undefined
-        const p = fn(...(args as Args))
-        if (cb) {
-            p.then(res => { if (cb) try { cb(null, res) } catch {} })
-             .catch(err => { if (cb) try { cb(err ?? new Error('Unknown fs error')) } catch {} })
-            return
-        }
-        return p as unknown as Promise<R>
-    }
+	return (...args: any[]) => {
+		const cb: Callback<R> | undefined =
+			typeof args[args.length - 1] === 'function' ? args.pop() : undefined
+		const p = fn(...(args as Args))
+		if (cb) {
+			p.then(res => {
+				if (cb)
+					try {
+						cb(null, res)
+					} catch {}
+			}).catch(err => {
+				if (cb)
+					try {
+						cb(err ?? new Error('Unknown fs error'))
+					} catch {}
+			})
+			return
+		}
+		return p as unknown as Promise<R>
+	}
 }
 
 const readFile = nodeify(async (path: string, options?: any) => {
@@ -118,27 +127,32 @@ const stat = nodeify(async (path: string, _options?: any) => {
 
 // No symlink support in OPFS; lstat behaves like stat
 const lstat = nodeify(async (path: string, _options?: any) => {
-    return (await (stat as any)(path))
+	return await stat(path)
 })
 
 // Minimal realpath implementation (no symlinks in OPFS)
 function normalizePath(p: string): string {
-    if (!p) return '/'
-    const isAbs = p.startsWith('/')
-    const parts = p.replace(/\\/g, '/').split('/').filter(Boolean)
-    const stack: string[] = []
-    for (const part of parts) {
-        if (part === '.' || part === '') continue
-        if (part === '..') { if (stack.length) stack.pop(); continue }
-        stack.push(part)
-    }
-    const joined = '/' + stack.join('/')
-    return isAbs ? joined : joined || '/'
+	if (!p) return '/'
+	const isAbs = p.startsWith('/')
+	const parts = p.replace(/\\/g, '/').split('/').filter(Boolean)
+	const stack: string[] = []
+	for (const part of parts) {
+		if (part === '.' || part === '') continue
+		if (part === '..') {
+			if (stack.length) stack.pop()
+			continue
+		}
+		stack.push(part)
+	}
+	const joined = '/' + stack.join('/')
+	return isAbs ? joined : joined || '/'
 }
 
-const realpath = nodeify(async (path: string, _options?: any) => normalizePath(path)) as any
-// Node exposes a native variant; point it to ourselves
-;(realpath as any).native = realpath
+const realpath = nodeify(async (path: string, _options?: any) =>
+	normalizePath(path)
+)
+// @ts-expect-error
+realpath.native = realpath
 
 const mkdir = nodeify(async (path: string, _options?: any) => opfsMkdirp(path))
 const readdir = nodeify(async (path: string, _options?: any) =>
@@ -151,7 +165,10 @@ const rename = nodeify(async (oldPath: string, newPath: string) =>
 
 // readlink is unsupported; expose a function to satisfy feature detection
 const readlink = nodeify(async (_path: string) => {
-    throw Object.assign(new Error('ENOSYS: readlink not supported in OPFS shim'), { code: 'ENOSYS' })
+	throw Object.assign(
+		new Error('ENOSYS: readlink not supported in OPFS shim'),
+		{ code: 'ENOSYS' }
+	)
 })
 
 class Dirent {
@@ -241,77 +258,105 @@ function createReadStream(path: string, options?: any) {
 }
 
 function createWriteStream(path: string, _options?: any) {
-    type Handler = (...args: any[]) => void
-    const handlers: Record<string, Handler[]> = Object.create(null)
-    const chunks: Uint8Array[] = []
-    let closed = false
-    function emit(evt: string, ...args: any[]) {
-        ;(handlers[evt] || []).forEach(h => {
-            try { h(...args) } catch {}
-        })
-    }
-    const api = {
-        on(evt: string, h: Handler) {
-            ;(handlers[evt] ||= []).push(h); return api
-        },
-        once(evt: string, h: Handler) {
-            const wrap: Handler = (...args) => { off(); h(...args) }
-            const off = () => {
-                const arr = handlers[evt]; if (!arr) return
-                const i = arr.indexOf(wrap); if (i >= 0) arr.splice(i, 1)
-            }
-            ;(handlers[evt] ||= []).push(wrap); return api
-        },
-        write(data: string | Uint8Array, cb?: (err?: Error | null) => void) {
-            if (closed) { cb?.(new Error('write after end')); return false }
-            try {
-                if (typeof data === 'string') {
-                    chunks.push(new TextEncoder().encode(data))
-                } else if (data) {
-                    chunks.push(data)
-                }
-                if (cb) cb(null)
-                return true
-            } catch (e: any) {
-                if (cb) cb(e)
-                emit('error', e)
-                return false
-            }
-        },
-        end(data?: string | Uint8Array, cb?: () => void) {
-            if (typeof data !== 'undefined') api.write(data as any)
-            closed = true
-            const total = chunks.reduce((n, c) => n + c.byteLength, 0)
-            const buf = new Uint8Array(total)
-            let off = 0
-            for (const c of chunks) { buf.set(c, off); off += c.byteLength }
-            opfsWriteBytes(path, buf)
-                .then(() => {
-                    emit('finish')
-                    emit('close')
-                    if (cb) try { cb() } catch {}
-                })
-                .catch(err => {
-                    emit('error', err)
-                    emit('close')
-                })
-        },
-        close() { api.end() },
-        destroy(err?: Error) { if (err) emit('error', err); emit('close') }
-    }
-    return api
+	type Handler = (...args: any[]) => void
+	const handlers: Record<string, Handler[]> = Object.create(null)
+	const chunks: Uint8Array[] = []
+	let closed = false
+	function emit(evt: string, ...args: any[]) {
+		;(handlers[evt] || []).forEach(h => {
+			try {
+				h(...args)
+			} catch {}
+		})
+	}
+	const api = {
+		on(evt: string, h: Handler) {
+			;(handlers[evt] ||= []).push(h)
+			return api
+		},
+		once(evt: string, h: Handler) {
+			const wrap: Handler = (...args) => {
+				off()
+				h(...args)
+			}
+			const off = () => {
+				const arr = handlers[evt]
+				if (!arr) return
+				const i = arr.indexOf(wrap)
+				if (i >= 0) arr.splice(i, 1)
+			}
+			;(handlers[evt] ||= []).push(wrap)
+			return api
+		},
+		write(data: string | Uint8Array, cb?: (err?: Error | null) => void) {
+			if (closed) {
+				cb?.(new Error('write after end'))
+				return false
+			}
+			try {
+				if (typeof data === 'string') {
+					chunks.push(new TextEncoder().encode(data))
+				} else if (data) {
+					chunks.push(data)
+				}
+				if (cb) cb(null)
+				return true
+			} catch (e: any) {
+				if (cb) cb(e)
+				emit('error', e)
+				return false
+			}
+		},
+		end(data?: string | Uint8Array, cb?: () => void) {
+			if (typeof data !== 'undefined') api.write(data)
+			closed = true
+			const total = chunks.reduce((n, c) => n + c.byteLength, 0)
+			const buf = new Uint8Array(total)
+			let off = 0
+			for (const c of chunks) {
+				buf.set(c, off)
+				off += c.byteLength
+			}
+			opfsWriteBytes(path, buf)
+				.then(() => {
+					emit('finish')
+					emit('close')
+					if (cb)
+						try {
+							cb()
+						} catch {}
+				})
+				.catch(err => {
+					emit('error', err)
+					emit('close')
+				})
+		},
+		close() {
+			api.end()
+		},
+		destroy(err?: Error) {
+			if (err) emit('error', err)
+			emit('close')
+		}
+	}
+	return api
 }
 
 // Minimal writev stub to satisfy consumers that probe for it.
 // It does NOT write; it only reports bytes length and forwards buffers.
-function writev(_fd: number, buffers: Array<Uint8Array>, _position: number | undefined, cb: (err: Error | null, bytes: number, bufs: Array<Uint8Array>) => void) {
-    try {
-        let total = 0
-        for (const b of buffers) total += b?.byteLength ?? 0
-        cb && cb(null, total, buffers)
-    } catch (e: any) {
-        cb && cb(e, 0, buffers)
-    }
+function writev(
+	_fd: number,
+	buffers: Array<Uint8Array>,
+	_position: number | undefined,
+	cb: (err: Error | null, bytes: number, bufs: Array<Uint8Array>) => void
+) {
+	try {
+		let total = 0
+		for (const b of buffers) total += b?.byteLength ?? 0
+		cb && cb(null, total, buffers)
+	} catch (e: any) {
+		cb && cb(e, 0, buffers)
+	}
 }
 
 // Synchronous APIs are not supported in the browser. Provide minimal stubs.
@@ -335,8 +380,10 @@ const opendirSync = notSupportedSync('opendir')
 const readlinkSync = notSupportedSync('readlink')
 
 // Provide a minimal realpathSync that just normalizes
-function realpathSyncImpl(p: string): string { return normalizePath(p) }
-;(realpathSyncImpl as any).native = realpathSyncImpl
+function realpathSyncImpl(p: string): string {
+	return normalizePath(p)
+}
+realpathSyncImpl.native = realpathSyncImpl
 
 function existsSync(_path: string): boolean {
 	// No sync filesystem checks in browser; return false to be safe.
@@ -408,5 +455,5 @@ const fs = {
 	}
 }
 
-export const promises = fs.promises as any
+export const promises = fs.promises
 export default fs

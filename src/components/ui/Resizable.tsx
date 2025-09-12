@@ -5,6 +5,7 @@ import type { DynamicProps, HandleProps, RootProps } from '@corvu/resizable'
 import ResizablePrimitive, { usePanelContext } from '@corvu/resizable'
 
 import { cn } from '../../utils/cn'
+import { currentBackground, currentColor } from '../../stores/themeStore'
 
 type ResizableProps<T extends ValidComponent = 'div'> = RootProps<T> & {
 	class?: string
@@ -14,12 +15,7 @@ const Resizable = <T extends ValidComponent = 'div'>(
 	props: DynamicProps<T, ResizableProps<T>>
 ) => {
 	const [, rest] = splitProps(props as ResizableProps, ['class'])
-	// const context = ResizablePrimitive.useContext()
-	// context.setSizes
-	createEffect(() => {
-		if (props.size) {
-		}
-	})
+
 	return (
 		<ResizablePrimitive
 			class={cn(

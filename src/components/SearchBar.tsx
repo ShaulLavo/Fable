@@ -190,7 +190,7 @@ export default function SearchPalette() {
 	})
 
 	const handleSelect = (item: SearchItem) => {
-		if ((item as any).type === 'command') {
+		if (item.type === 'command') {
 			const cmd = item as CommandItem
 			if (cmd.action === 'openThemeSelector') {
 				setMode('theme')
@@ -199,7 +199,7 @@ export default function SearchPalette() {
 			}
 			return
 		}
-		if ((item as any).type === 'theme') {
+		if (item.type === 'theme') {
 			const themeItem = item as ThemeItem
 			setTheme(themeItem.key)
 			setIsSearchBar(false)

@@ -1,8 +1,8 @@
 import {
-  MLCEngine,
-  MLCEngineInterface,
-  ChatCompletionMessageParam,
-  CompletionUsage
+	MLCEngine,
+	MLCEngineInterface,
+	ChatCompletionMessageParam,
+	CompletionUsage
 } from '@mlc-ai/web-llm'
 import { streamText, generateText } from 'ai'
 import { createGatewayProvider, type GatewayModelId } from '@ai-sdk/gateway'
@@ -11,112 +11,128 @@ import type { OpenAIResponsesProviderOptions } from '@ai-sdk/openai'
 // Local JSONValue type to avoid depending on the 'ai' package for types only.
 // If you add the 'ai' package, you can switch to: `import type { JSONValue } from 'ai'`.
 type JSONPrimitive = string | number | boolean | null
-export type JSONValue = JSONPrimitive | { [key: string]: JSONValue } | JSONValue[]
+export type JSONValue =
+	| JSONPrimitive
+	| { [key: string]: JSONValue }
+	| JSONValue[]
 
 // -------- AI SDK Gateway integration (front-end only for now) --------
 
 function getVercelOidcToken(): string | undefined {
-  // Support both Vite-style and Node-style env exposure
-  // Vite only exposes env vars prefixed with VITE_.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const viteEnvDirect = (import.meta as any)?.env?.VERCEL_OIDC_TOKEN as string | undefined
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const viteEnvPrefixed = (import.meta as any)?.env?.VITE_VERCEL_OIDC_TOKEN as string | undefined
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const nodeEnv = (typeof process !== 'undefined' ? (process as any).env?.VERCEL_OIDC_TOKEN : undefined) as
-    | string
-    | undefined
-  // Allow setting via storage for local dev convenience
-  const ls = typeof localStorage !== 'undefined' ? localStorage.getItem('VERCEL_OIDC_TOKEN') ?? undefined : undefined
-  const ss = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('VERCEL_OIDC_TOKEN') ?? undefined : undefined
-  return viteEnvDirect ?? viteEnvPrefixed ?? nodeEnv ?? ss ?? ls
+	// Support both Vite-style and Node-style env exposure
+	// Vite only exposes env vars prefixed with VITE_.
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const viteEnvDirect = import.meta?.env?.VERCEL_OIDC_TOKEN as
+		| string
+		| undefined
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const viteEnvPrefixed = import.meta?.env?.VITE_VERCEL_OIDC_TOKEN as
+		| string
+		| undefined
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const nodeEnv = (
+		typeof process !== 'undefined' ? process.env?.VERCEL_OIDC_TOKEN : undefined
+	) as string | undefined
+	// Allow setting via storage for local dev convenience
+	const ls =
+		typeof localStorage !== 'undefined'
+			? (localStorage.getItem('VERCEL_OIDC_TOKEN') ?? undefined)
+			: undefined
+	const ss =
+		typeof sessionStorage !== 'undefined'
+			? (sessionStorage.getItem('VERCEL_OIDC_TOKEN') ?? undefined)
+			: undefined
+	return viteEnvDirect ?? viteEnvPrefixed ?? nodeEnv ?? ss ?? ls
 }
 
 const gateway = createGatewayProvider({
-  apiKey: getVercelOidcToken()
+	apiKey: getVercelOidcToken()
 })
 
 export function isGatewayConfigured(): boolean {
-  return Boolean(getVercelOidcToken())
+	return Boolean(getVercelOidcToken())
 }
 
 export async function getAvailableModels() {
-  try {
-    const response = await gateway.getAvailableModels()
-    return response.models
-      .map(model => ({ id: model.id, name: model.name }))
-      .concat([{ id: Models.OpenAIGPT5, name: 'GPT-5' }])
-  } catch (err) {
-    // If discovery fails (e.g., running locally without gateway), fall back to SUPPORTED_MODELS
-    console.warn('Gateway model discovery failed; falling back to static list.', err)
-    return SUPPORTED_MODELS.map(id => ({ id, name: id }))
-  }
+	try {
+		const response = await gateway.getAvailableModels()
+		return response.models
+			.map(model => ({ id: model.id, name: model.name }))
+			.concat([{ id: Models.OpenAIGPT5, name: 'GPT-5' }])
+	} catch (err) {
+		// If discovery fails (e.g., running locally without gateway), fall back to SUPPORTED_MODELS
+		console.warn(
+			'Gateway model discovery failed; falling back to static list.',
+			err
+		)
+		return SUPPORTED_MODELS.map(id => ({ id, name: id }))
+	}
 }
 
 export interface ModelOptions {
-  model: string
-  providerOptions?: Record<string, Record<string, JSONValue>>
-  headers?: Record<string, string>
+	model: string
+	providerOptions?: Record<string, Record<string, JSONValue>>
+	headers?: Record<string, string>
 }
 
 export function getModelOptions(
-  modelId: string,
-  options?: { reasoningEffort?: 'low' | 'medium' }
+	modelId: string,
+	options?: { reasoningEffort?: 'low' | 'medium' }
 ): ModelOptions {
-  if (modelId === Models.OpenAIGPT5) {
-    return {
-      model: modelId,
-      providerOptions: {
-        openai: {
-          include: ['reasoning.encrypted_content'],
-          reasoningEffort: options?.reasoningEffort ?? 'low',
-          reasoningSummary: 'auto',
-          serviceTier: 'priority'
-        } satisfies OpenAIResponsesProviderOptions
-      }
-    }
-  }
+	if (modelId === Models.OpenAIGPT5) {
+		return {
+			model: modelId,
+			providerOptions: {
+				openai: {
+					include: ['reasoning.encrypted_content'],
+					reasoningEffort: options?.reasoningEffort ?? 'low',
+					reasoningSummary: 'auto',
+					serviceTier: 'priority'
+				} satisfies OpenAIResponsesProviderOptions
+			}
+		}
+	}
 
-  if (modelId === Models.AnthropicClaude4Sonnet) {
-    return {
-      model: modelId,
-      headers: { 'anthropic-beta': 'fine-grained-tool-streaming-2025-05-14' },
-      providerOptions: {
-        anthropic: {
-          cacheControl: { type: 'ephemeral' }
-        }
-      }
-    }
-  }
+	if (modelId === Models.AnthropicClaude4Sonnet) {
+		return {
+			model: modelId,
+			headers: { 'anthropic-beta': 'fine-grained-tool-streaming-2025-05-14' },
+			providerOptions: {
+				anthropic: {
+					cacheControl: { type: 'ephemeral' }
+				}
+			}
+		}
+	}
 
-  return {
-    model: modelId
-  }
+	return {
+		model: modelId
+	}
 }
 
 export enum Models {
-  AmazonNovaPro = 'amazon/nova-pro',
-  AnthropicClaude4Sonnet = 'anthropic/claude-4-sonnet',
-  GoogleGeminiFlash = 'google/gemini-2.5-flash',
-  MoonshotKimiK2 = 'moonshotai/kimi-k2',
-  OpenAIGPT5 = 'gpt-5',
-  XaiGrok3Fast = 'xai/grok-3-fast'
+	AmazonNovaPro = 'amazon/nova-pro',
+	AnthropicClaude4Sonnet = 'anthropic/claude-4-sonnet',
+	GoogleGeminiFlash = 'google/gemini-2.5-flash',
+	MoonshotKimiK2 = 'moonshotai/kimi-k2',
+	OpenAIGPT5 = 'gpt-5',
+	XaiGrok3Fast = 'xai/grok-3-fast'
 }
 
 export const DEFAULT_MODEL = Models.OpenAIGPT5
 
 export const SUPPORTED_MODELS: GatewayModelId[] = [
-  Models.AmazonNovaPro,
-  Models.AnthropicClaude4Sonnet,
-  Models.GoogleGeminiFlash,
-  Models.MoonshotKimiK2,
-  Models.OpenAIGPT5,
-  Models.XaiGrok3Fast
+	Models.AmazonNovaPro,
+	Models.AnthropicClaude4Sonnet,
+	Models.GoogleGeminiFlash,
+	Models.MoonshotKimiK2,
+	Models.OpenAIGPT5,
+	Models.XaiGrok3Fast
 ]
 
 export const TEST_PROMPTS = [
-  'Generate a Next.js app that allows to list and search Pokemons',
-  'Create a `golang` server that responds with "Hello World" to any request'
+	'Generate a Next.js app that allows to list and search Pokemons',
+	'Create a `golang` server that responds with "Hello World" to any request'
 ]
 
 export type ChatProvider = 'local' | 'vercel'
@@ -130,7 +146,11 @@ export default class ChatApi {
 	private chatRequestChain: Promise<void> = Promise.resolve()
 	private chatHistory: ChatCompletionMessageParam[] = []
 
-	constructor(engine: MLCEngineInterface, modelId: string, provider: ChatProvider = 'local') {
+	constructor(
+		engine: MLCEngineInterface,
+		modelId: string,
+		provider: ChatProvider = 'local'
+	) {
 		this.engine = engine
 		this.modelId = modelId
 		this.provider = provider
@@ -228,7 +248,12 @@ export default class ChatApi {
 			let usage: CompletionUsage | undefined = undefined
 			const messages = (
 				options?.system
-					? [{ role: 'system', content: options.system } as ChatCompletionMessageParam]
+					? [
+							{
+								role: 'system',
+								content: options.system
+							} as ChatCompletionMessageParam
+						]
 					: []
 			).concat(this.chatHistory)
 
@@ -262,11 +287,12 @@ export default class ChatApi {
 			} else {
 				// Vercel Gateway path via AI SDK
 				const extra = getModelOptions(this.modelId)
-				const { textStream } = await streamText({
-					model: gateway(this.modelId as any),
-					messages: messages as any,
-					// providerOptions/headers if specified for the model
-					...(extra.providerOptions ? { providerOptions: extra.providerOptions } : {}),
+				const { textStream } = streamText({
+					model: gateway(this.modelId),
+					messages: messages,
+					...(extra.providerOptions
+						? { providerOptions: extra.providerOptions }
+						: {}),
 					...(extra.headers ? { headers: extra.headers } : {})
 				})
 				for await (const delta of textStream) {
@@ -304,9 +330,11 @@ export default class ChatApi {
 			} else {
 				const extra = getModelOptions(this.modelId)
 				const { text } = await generateText({
-					model: gateway(this.modelId as any),
+					model: gateway(this.modelId),
 					prompt,
-					...(extra.providerOptions ? { providerOptions: extra.providerOptions } : {}),
+					...(extra.providerOptions
+						? { providerOptions: extra.providerOptions }
+						: {}),
 					...(extra.headers ? { headers: extra.headers } : {})
 				})
 				return text ?? ''

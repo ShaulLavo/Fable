@@ -19,6 +19,7 @@ import {
 	isTsLoading
 } from '../stores/editorStore'
 import { Git, TypeScript } from '../assets/customIcons'
+import { STATUS_BAR_HEIGHT } from '../stores/appStateStore'
 
 export const DefaultDescription = (props: { description: string }) => {
 	return <div>{props.description}</div>
@@ -74,7 +75,9 @@ export const StatusBar: Component<StatusBarProps> = ({ ref }) => {
 				class="fixed bottom-0 left-0 right-0 w-full z-[100] flex border-t-2 p-1"
 				style={{
 					'background-color': secondaryBackground(),
-					'border-color': dragHandleColor()
+					'border-color': currentBackground(),
+
+					height: STATUS_BAR_HEIGHT + 'px'
 				}}
 			>
 				<ul

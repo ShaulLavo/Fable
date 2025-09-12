@@ -9,10 +9,19 @@ export const useFileExtension = () => {
 
 	const isSystemPath = () => SYSTEM_PATHS.includes(filePath())
 
+
+	// TS or JS family, for enabling language features & worker sync
 	const isTs = () =>
 		['typescript', 'javascript'].includes(
 			extensionMap[currentExtension() as keyof typeof extensionMap]
 		)
+
+	// Specifically JavaScript variants, useful to relax linting
+	const isJs = () => ['js', 'jsx', 'mjs', 'cjs'].includes(currentExtension()!)
+
+	// Specifically TypeScript variants
+	const isTypeScriptOnly = () =>
+		['ts', 'tsx', 'dts'].includes(currentExtension()!)
 
 	const isPython = () =>
 		extensionMap[currentExtension() as keyof typeof extensionMap] === 'python'
@@ -33,6 +42,8 @@ export const useFileExtension = () => {
 
 	return {
 		isTs,
+		isJs,
+		isTypeScriptOnly,
 		isPython,
 		isJSON,
 		isHtml,

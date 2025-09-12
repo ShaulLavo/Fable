@@ -2,6 +2,7 @@ import { JSX, ParentComponent } from 'solid-js'
 import { Resizable, ResizableHandle, ResizablePanel } from '../ui/Resizable'
 import { ChatPanelSize, setChatPanelSize } from '../../stores/appStateStore'
 import {
+	currentBackground,
 	dragHandleColor,
 	secondaryBackground,
 	secondaryColor
@@ -37,7 +38,7 @@ export const ChatLayout: ParentComponent<{
 							<div class="flex flex-col h-full min-h-0">{props.chat}</div>
 						</ResizablePanel>
 						<ResizableHandle
-							style={{ 'background-color': dragHandleColor(), width: '2px' }}
+							style={{ 'background-color': currentBackground(), width: '2px' }}
 						/>
 						<ResizablePanel
 							class="overflow-hidden h-full"
@@ -57,7 +58,7 @@ export const ChatLayout: ParentComponent<{
 							{props.children}
 						</ResizablePanel>
 						<ResizableHandle
-							style={{ 'background-color': dragHandleColor(), width: '2px' }}
+							style={{ 'background-color': currentBackground(), width: '2px' }}
 						/>
 						<ResizablePanel
 							class="overflow-hidden h-full"

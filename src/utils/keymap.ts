@@ -5,7 +5,7 @@ import { formatCode, getConfigFromExt } from './format'
 // import { code, setCode } from '~/stores/editorStore'
 import { File, Folder } from '../types/FS.types'
 import { getNode } from '../service/FS.service'
-import { setIsSearchBar, toggleSideBar } from '../stores/appStateStore'
+import { setIsSearchBar, toggleSideBar, toggleTerminal } from '../stores/appStateStore'
 import hotkeys from 'hotkeys-js'
 import { Accessor } from 'solid-js'
 import { themedToast } from './notify'
@@ -15,6 +15,10 @@ hotkeys('ctrl+b,command+b', toggleSideBar)
 hotkeys('ctrl+p,command+p', e => {
 	e.preventDefault()
 	setIsSearchBar(p => !p)
+})
+hotkeys('ctrl+j,command+j', e => {
+	e.preventDefault()
+	toggleTerminal()
 })
 // hotkeys('ctrl+p', toggleSideBar)
 

@@ -1,4 +1,6 @@
 import { bracketColors } from '../stores/themeStore'
+const clamp = (value: number, min: number, max: number): number =>
+	Math.max(min, Math.min(value, max))
 
 export function rgbToHex(r: number, g: number, b: number) {
 	return '#' + ((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1)
@@ -22,8 +24,6 @@ export const getLighterRgbColor = (
 ): string => {
 	const rgb = hexToRgb(hex)
 	if (!rgb) return ''
-	const clamp = (value: number, min: number, max: number): number =>
-		Math.max(min, Math.min(value, max))
 	const validAlpha = clamp(alpha, 0, 1)
 	const lighten = (channel: number): number =>
 		clamp(Math.floor(channel + (255 - channel) * factor), 0, 255)
@@ -37,8 +37,6 @@ export const getDarkerRgbColor = (
 ): string => {
 	const rgb = hexToRgb(hex)
 	if (!rgb) return ''
-	const clamp = (value: number, min: number, max: number): number =>
-		Math.max(min, Math.min(value, max))
 	const validAlpha = clamp(alpha, 0, 1)
 	const darken = (channel: number): number =>
 		clamp(Math.floor(channel * factor), 0, 255)
@@ -54,4 +52,11 @@ export const createColorCycler = () => {
 		index = (index + 1) % colors.length // Cycle back to the start when reaching the end
 		return color
 	}
+}
+export const getTransparentColor = (hex: string, alpha: number): string => {
+	const rgb = hexToRgb(hex)
+	if (!rgb) return ''
+
+	const validAlpha = clamp(alpha, 0, 1)
+	return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${validAlpha})`
 }

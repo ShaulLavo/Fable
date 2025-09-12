@@ -8,7 +8,7 @@ import { ContextMenu, useContextMenu } from './context/ContextMenu'
 import { FSProvider, isMock } from './context/FsContext'
 import { Main } from './Main'
 import { MockFsProvider } from './mocks/FsContext.mock'
-import { isStatusBar } from './stores/appStateStore'
+import { isStatusBar, STATUS_BAR_HEIGHT } from './stores/appStateStore'
 import { fontFamilyWithFallback } from './stores/fontStore'
 import {
 	baseFontSize,
@@ -57,7 +57,7 @@ export default function App() {
 			<div
 				style={{
 					height: isStatusBar()
-						? window.innerHeight - 28 + 'px'
+						? window.innerHeight - STATUS_BAR_HEIGHT + 'px'
 						: window.innerHeight + 'px',
 					overflow: 'hidden'
 				}}

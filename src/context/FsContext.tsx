@@ -106,23 +106,24 @@ export const FSProvider: ParentComponent<{ initialTree?: Folder }> = props => {
 			editorMounted,
 			async mounted => {
 				if (!mounted) return
-            try {
-                // OPFS is the source of truth
-                let tree = await OPFS.tree(fs)
-                if (!isEmptyNode(tree)) {
-                    tree.name = rootName()
-                    setFs(sortTreeInDraft(tree))
-                    return
-                }
-                // If OPFS is empty but we've already bootstrapped once, do not
-                // re-seed demo files; show empty workspace instead
-                const bootstrapped = localStorage.getItem(STORAGE_KEYS.BOOTSTRAPPED) === 'true'
-                if (bootstrapped) {
-                    tree.name = rootName()
-                    setFs(sortTreeInDraft(tree))
-                    return
-                }
-                setIsFsLoading(true)
+				try {
+					// OPFS is the source of truth
+					let tree = await OPFS.tree(fs)
+					if (!isEmptyNode(tree)) {
+						tree.name = rootName()
+						setFs(sortTreeInDraft(tree))
+						return
+					}
+					// If OPFS is empty but we've already bootstrapped once, do not
+					// re-seed demo files; show empty workspace instead
+					const bootstrapped =
+						localStorage.getItem(STORAGE_KEYS.BOOTSTRAPPED) === 'true'
+					if (bootstrapped) {
+						tree.name = rootName()
+						setFs(sortTreeInDraft(tree))
+						return
+					}
+					setIsFsLoading(true)
 					// GET DEMO DATA
 					const fable = import.meta.glob('../**/*', {
 						exhaustive: true,
@@ -145,13 +146,13 @@ export const FSProvider: ParentComponent<{ initialTree?: Folder }> = props => {
 						// console.log(name, path, content.default)
 						return OPFS.saveFile({ name, path }, content.default)
 					})
-                await Promise.all(promises)
-                tree = await OPFS.tree(fs)
-                tree.name = rootName()
-                setFs(sortTreeInDraft(tree))
-                setCurrentNode(fs.children.find(n => n.name === 'App.tsx')!)
-                // Mark as bootstrapped so we don't auto re-seed on refresh
-                localStorage.setItem(STORAGE_KEYS.BOOTSTRAPPED, 'true')
+					await Promise.all(promises)
+					tree = await OPFS.tree(fs)
+					tree.name = rootName()
+					setFs(sortTreeInDraft(tree))
+					setCurrentNode(fs.children.find(n => n.name === 'App.tsx')!)
+					// Mark as bootstrapped so we don't auto re-seed on refresh
+					localStorage.setItem(STORAGE_KEYS.BOOTSTRAPPED, 'true')
 				} catch (e) {
 					console.error(e)
 				} finally {
@@ -258,25 +259,25 @@ export const FSProvider: ParentComponent<{ initialTree?: Folder }> = props => {
 				const size = await opfsNode.getSize()
 				setCurrentFileSize(size)
 				if (size <= LOCAL_STORAGE_CAP) {
-						const content = await opfsNode.text()
-						openFiles.set(file.path, content)
-						setBaseline(file.path, content)
-						return
-					}
+					const content = await opfsNode.text()
+					openFiles.set(file.path, content)
+					setBaseline(file.path, content)
+					return
+				}
 			}
-            const chunk = await OPFS.getFileInChunks(file, LOCAL_STORAGE_CAP)
-            if (!chunk) return
-            try {
-                const { value, done } = await chunk.next()
-                if (done) return
-                openFiles.set(file.path, value)
-                setBaseline(file.path, value)
-            } finally {
-                // Explicitly close the stream to avoid OPFS locks
-                try {
-                    await chunk.return(undefined as any)
-                } catch {}
-            }
+			const chunk = await OPFS.getFileInChunks(file, LOCAL_STORAGE_CAP)
+			if (!chunk) return
+			try {
+				const { value, done } = await chunk.next()
+				if (done) return
+				openFiles.set(file.path, value)
+				setBaseline(file.path, value)
+			} finally {
+				// Explicitly close the stream to avoid OPFS locks
+				try {
+					await chunk.return(undefined)
+				} catch {}
+			}
 		}
 	}
 	createEffect(on(currentFile, loadCurrentFile, { defer: true }))
@@ -436,7 +437,9 @@ export const FSProvider: ParentComponent<{ initialTree?: Folder }> = props => {
 			c => c.name === name && c.path !== node.path
 		)
 		if (siblingExists) {
-			console.error(`A node named "${name}" already exists in "${parent.name}".`)
+			console.error(
+				`A node named "${name}" already exists in "${parent.name}".`
+			)
 			return
 		}
 
@@ -537,54 +540,6 @@ export const FSProvider: ParentComponent<{ initialTree?: Folder }> = props => {
 				openFiles.set(node.path, content)
 			}
 		})
-	}
-	async function customUpdateNodeName(node: FSNode, name: string) {
-		//TODO this is a mess
-		//node has new path after batch so we capture old path here
-		const oldPath = node.path
-
-		const updateDescendantPaths = (
-			folder: Folder,
-			oldPrefix: string,
-			newPrefix: string
-		) => {
-			folder.children.forEach(child => {
-				if (child.path.startsWith(oldPrefix)) {
-					if (isFolder(child)) {
-						updateDescendantPaths(child, oldPrefix, newPrefix)
-					}
-					setFs(
-						produce(draft => {
-							const target = getNode(draft, child.path)
-							if (target) {
-								target.path = child.path.replace(oldPrefix, newPrefix)
-							}
-						})
-					)
-				}
-			})
-		}
-		setFs(
-			produce(draft => {
-				const target = getNode(draft, node.path)
-				if (!target) return
-				const oldPath = target.path
-				const newPath = target.path.replace(target.name, name)
-				if (isFolder(target)) {
-					updateDescendantPaths(target, oldPath, newPath)
-				}
-				target.path = node.path.replace(node.name, name)
-				target.name = name
-				if (oldPath === currentPath()) setCurrentPath(newPath)
-			})
-		)
-		if (openFiles.has(oldPath)) {
-			const content = openFiles.get(oldPath)
-			openFiles.delete(oldPath)
-			openFiles.set(node.path, content ?? '')
-		}
-
-		await OPFS.move(node, oldPath)
 	}
 
 	function setIsOpen(node: Folder, isOpen: boolean) {
