@@ -1,183 +1,42 @@
-import Resizable from '@corvu/resizable'
-import { createEffect, createSignal, For, Show } from 'solid-js'
-import { FileSystem } from './components/FileSystem/FileSystem'
-import {
-	horizontalPanelSize,
-	verticalPanelSize,
-	isStatusBar,
-	mainSideBarPosition,
-	setHorizontalPanelSize,
-	setVerticalPanelSize,
-	isTerminal,
-	panelGap
-} from './stores/appStateStore'
-import {
-	currentBackground,
-	currentColor,
-	dragHandleColor,
-	secondaryColor
-} from './stores/themeStore'
-
-//
+import { createSignal, onMount, Show } from 'solid-js'
+import { GlobalLoader } from './components/GlobalLoader'
 import SearchPalette from './components/SearchBar'
+import { registerGlobalHotkeys } from './utils/keymap'
+
+import { useAppState } from './context/AppStateContext'
+import { ContextMenu, useContextMenu } from './context/ContextMenu'
+import { MainView } from './MainView'
+// import './scripts/svgToCmp'
+import { Toaster } from 'solid-sonner'
 import { StatusBar } from './components/StatusBar'
-import { ResizableHandle, ResizablePanel } from './components/ui/Resizable'
-import { fontFamilyWithFallback, LOGO_FONT_FAMILY } from './stores/fontStore'
-import Icon from './components/ui/Icon'
-import { Tabs } from './components/ui/AlwaysRenderTabs'
-import { lazy } from 'solid-js'
-const Chat = lazy(() =>
-	import('./components/Chat/Chat').then(m => ({ default: m.Chat }))
-)
-import { Terminal } from './components/Terminal/Terminal'
-import EditorArea from './components/Editor/EditorArea'
-export interface MainProps {
-	sidebarSide?: 'left' | 'right'
-}
+import { ConfirmDialogHost } from './components/ui/ConfirmDialog'
 
-export function Main(props: MainProps) {
-	const [editorContainer, setEditorContainer] = createSignal<HTMLDivElement>(
-		null!
-	)
-	const tabs = [
-		{
-			id: '1',
-			icon: <Icon icon="file" />,
-			label: 'EXPLORER',
-			content: <FileSystem />
-		},
-		{
-			id: '2',
-			icon: <Icon class="h-full" icon="chat" />,
-			label: 'CHAT',
-			content: <Chat />
-		}
-	]
-	return (
-		<div style={{ 'font-family': fontFamilyWithFallback() }}>
-			{/* Left/Right: sidebar vs workbench; terminal sits only under workbench */}
-			<Resizable
-				sizes={horizontalPanelSize()}
-				onSizesChange={size => {
-					if (size.length !== 2) return
-					setHorizontalPanelSize(size)
-				}}
-				class="w-full flex min-h-0"
-				style={{
-					'background-color': currentBackground(),
-					color: secondaryColor(),
-					height: isStatusBar()
-						? window.innerHeight - 28 + 'px'
-						: window.innerHeight + 'px',
-					overflow: 'hidden'
-				}}
-				orientation="horizontal"
-				accessKey="horizontal"
-			>
-				{/* Left panel */}
-				<ResizablePanel
-					class="overflow-x-hidden border-none h-full"
-					initialSize={horizontalPanelSize()?.[0]}
-					id="left-panel"
-				>
-					{props.sidebarSide === 'left' ? (
-						<Tabs tabs={tabs} />
-					) : (
-						<RightWorkbench />
-					)}
-				</ResizablePanel>
-
-				<ResizableHandle />
-
-				{/* Right panel */}
-				<ResizablePanel
-					class="overflow-hidden min-h-0"
-					initialSize={horizontalPanelSize()?.[1]}
-					id="right-panel"
-				>
-					{props.sidebarSide === 'left' ? (
-						<RightWorkbench />
-					) : (
-						<Tabs tabs={tabs} />
-					)}
-				</ResizablePanel>
-			</Resizable>
-		</div>
-	)
-}
-// Editor layout moved to components/Editor/EditorArea for code-splitting
-
-const Workbench = () => {
-	const [mountEditor, setMountEditor] = createSignal(false)
-	;(() => {
-		if ('requestIdleCallback' in window) {
-			window.requestIdleCallback(() => setMountEditor(true))
-		} else {
-			setTimeout(() => setMountEditor(true), 0)
-		}
-	})()
-	return (
-		<Show
-			when={mountEditor()}
-			fallback={<div class="p-2 text-sm opacity-80">Loading editor…</div>}
-		>
-			<EditorArea />
-		</Show>
-	)
-}
-
-const RightWorkbench = () => {
-	const [lastTermSplit, setLastTermSplit] = createSignal<
-		[number, number] | null
-	>(null)
-
-	createEffect(() => {
-		const show = isTerminal()
-		const sizes = verticalPanelSize()
-		if (!show) {
-			if (sizes[1] !== 0) setLastTermSplit(sizes as [number, number])
-			if (sizes[1] !== 0) setVerticalPanelSize([1, 0])
-		} else {
-			if (sizes[1] === 0) setVerticalPanelSize(lastTermSplit() ?? [0.7, 0.3])
-		}
-	})
-
-	const handleStyle = () => ({
-		'background-color': currentBackground(),
-		width: panelGap() + 'px'
-		// display: isTerminal() ? '' : 'none'
-	})
-
-	const bottomPanelStyle = () => ({
-		display: isTerminal() ? '' : 'none'
+export function Main() {
+	const { hideContextMenu } = useContextMenu()
+	const [, setStatusBarRef] = createSignal<HTMLDivElement>(null!)
+	const { isStatusBar, toggleSideBar, setIsSearchBar, toggleTerminal } =
+		useAppState()
+	onMount(() => {
+		registerGlobalHotkeys({ toggleSideBar, setIsSearchBar, toggleTerminal })
 	})
 
 	return (
-		<Resizable
-			sizes={verticalPanelSize()}
-			onSizesChange={size => {
-				if (size.length !== 2) return
-				setVerticalPanelSize(size)
-			}}
-			class="w-full flex"
+		<div
 			style={{
-				'background-color': currentBackground(),
-				color: secondaryColor(),
-				height: '100%',
+				height: window.innerHeight + 'px',
 				overflow: 'hidden'
 			}}
-			orientation="vertical"
-			accessKey="vertical"
 		>
-			<ResizablePanel class="min-h-0">
-				<Workbench />
-			</ResizablePanel>
-			<ResizableHandle />
-			<ResizablePanel class="min-h-[140px]" style={bottomPanelStyle()}>
-				<Show when={isTerminal()}>
-					<Terminal class="h-full" />
-				</Show>
-			</ResizablePanel>
-		</Resizable>
+			<MainView sidebarSide="left" />
+			<SearchPalette />
+			<ConfirmDialogHost />
+
+			<ContextMenu onClose={hideContextMenu} />
+			<GlobalLoader />
+			<Toaster />
+			<Show when={isStatusBar()}>
+				<StatusBar ref={setStatusBarRef} />
+			</Show>
+		</div>
 	)
 }

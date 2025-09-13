@@ -2,7 +2,7 @@ import { Component, For } from 'solid-js'
 import { Dynamic } from 'solid-js/web'
 import { useFS } from '../../context/FsContext'
 import { getNodeIcon } from '../../stores/icons'
-import { currentColor, secondaryColor } from '../../stores/themeStore'
+import { useTheme } from '../../context/ThemeContext'
 import { getNode } from '../../service/FS.service'
 import { dirNameIconMap, fileExtIconMap } from '../../consts/icons'
 
@@ -10,6 +10,7 @@ interface EditorNavProps {
 	index: number
 }
 export const EditorNav: Component<EditorNavProps> = ({ index }) => {
+    const { currentColor, secondaryColor } = useTheme()
 	const { currentFile, fs } = useFS()
 	const buttons = () => currentFile()?.path?.split('/').filter(Boolean)
 

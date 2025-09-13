@@ -16,15 +16,7 @@ import { Folder, FSNode, isFolder } from '../../types/FS.types'
 import { cn } from '../../utils/cn'
 import { NodeNameInput } from './NameInput'
 import { Node } from './Node'
-import {
-	bracketColors,
-	currentTheme,
-	currentThemeName,
-	isDark,
-	setTheme,
-	ThemeKey,
-	themeSettings
-} from '../../stores/themeStore'
+import { ThemeKey, useTheme } from '../../context/ThemeContext'
 import { getLighterRgbColor } from '../../utils/color'
 import { ContextMenuItem, useContextMenu } from '../../context/ContextMenu'
 import { SYSTEM_PATHS } from '../../consts/app'
@@ -40,6 +32,8 @@ export interface FileSystemTreeProps {
 
 export const FileSystemTree: Component<FileSystemTreeProps> = props => {
 	if (!isDev && SYSTEM_PATHS.includes(props.node.path)) return null
+	const { bracketColors, currentThemeName, isDark, setTheme, themeSettings } =
+		useTheme()
 
 	const {
 		setCurrentFolder,

@@ -1,7 +1,7 @@
 import { makeEventListener } from '@solid-primitives/event-listener'
 import { makePersisted } from '@solid-primitives/storage'
 import { createSignal, createMemo, onMount, Accessor } from 'solid-js'
-import { baseFontSize } from '../stores/themeStore'
+import { useFont } from '../context/FontContext'
 
 interface InnerZoomOptions {
 	ref: HTMLElement | Accessor<HTMLElement>
@@ -20,6 +20,7 @@ const clmap = (value: number, min: number, max: number) => {
 }
 
 export const createInnerZoom = (options: InnerZoomOptions) => {
+	const { baseFontSize } = useFont()
 	const [percentChange, setPercentChange] = makePersisted(createSignal(0), {
 		name: options.key + '-fontChange'
 	})

@@ -1,12 +1,5 @@
 import { Component, For, Setter } from 'solid-js'
-import {
-	baseFontSize,
-	bracketColors,
-	currentBackground,
-	currentColor,
-	dragHandleColor,
-	secondaryBackground
-} from '../stores/themeStore'
+import { useTheme } from '../context/ThemeContext'
 
 import { Spinner, SpinnerType } from 'solid-spinner'
 import { HoverCard } from '../components/HoverCard'
@@ -19,7 +12,7 @@ import {
 	isTsLoading
 } from '../stores/editorStore'
 import { Git, TypeScript } from '../assets/customIcons'
-import { STATUS_BAR_HEIGHT } from '../stores/appStateStore'
+import { useAppState } from '../context/AppStateContext'
 import { NumberTicker } from './ui/NumberTicker'
 import {
 	isModelLoading,
@@ -28,7 +21,7 @@ import {
 	lastModelId
 } from '../stores/modelStatusStore'
 import { IconLogo } from '../assets/customIcons'
-import { LOGO_FONT_FAMILY } from '../stores/fontStore'
+import { LOGO_FONT_FAMILY, useFont } from '../context/FontContext'
 
 export const DefaultDescription = (props: { description: string }) => {
 	return <div>{props.description}</div>
@@ -46,11 +39,13 @@ interface StatusBarProps {
 }
 
 export const StatusBar: Component<StatusBarProps> = ({ ref }) => {
+	const { STATUS_BAR_HEIGHT } = useAppState()
+	const { currentBackground, currentColor, secondaryBackground } = useTheme()
 	const { isTs } = useFileExtension()
 	const selectionLength = () => currentSelection()[1] - currentSelection()[0]
 	const selectionText = () =>
 		selectionLength() > 0 ? `(${selectionLength()} selected)` : ''
-
+	const { baseFontSize } = useFont()
 	const statuses = () =>
 		[
 			{

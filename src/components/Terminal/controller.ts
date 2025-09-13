@@ -1,4 +1,4 @@
-import { currentColor } from '../../stores/themeStore'
+import type { Accessor } from 'solid-js'
 import { ANSI, fgFromHex } from './utils'
 import { NodeRuntime } from './node/runtime'
 import { runCommand } from './commands/cli'
@@ -17,9 +17,11 @@ export class TerminalController {
 	private histIdx = -1
 	private nodeMode = false
 	private node: NodeRuntime
+    private currentColor: Accessor<string>
 
-	constructor(term: TermLike) {
+	constructor(term: TermLike, currentColor: Accessor<string>) {
 		this.term = term
+		this.currentColor = currentColor
 		this.node = new NodeRuntime({
 			writeln: (s: string) => this.writeln(s),
 			reset: () => this.term.reset()
@@ -32,7 +34,7 @@ export class TerminalController {
 	}
 
 	private prompt() {
-		const promptColor = fgFromHex(currentColor())
+		const promptColor = fgFromHex(this.currentColor())
 		const pfx = this.nodeMode ? 'node' : this.cwd
 		this.term.write(
 			`\r\n${promptColor}${pfx}${ANSI.reset} ${ANSI.dim}>${ANSI.reset} `
@@ -48,7 +50,7 @@ export class TerminalController {
 	}
 
 	private redrawInput() {
-		const promptColor = fgFromHex(currentColor())
+		const promptColor = fgFromHex(this.currentColor())
 		const pfx = this.nodeMode ? 'node' : this.cwd
 		this.term.write(
 			`\x1b[2K\r${promptColor}${pfx}${ANSI.reset} ${ANSI.dim}>${ANSI.reset} ${this.lineBuffer}`

@@ -1,7 +1,7 @@
 import { createSignal, JSX } from 'solid-js'
 import { Dynamic } from 'solid-js/web'
 import { getNodeIcon } from '../../stores/icons'
-import { currentColor } from '../../stores/themeStore'
+import { useTheme } from '../../context/ThemeContext'
 import { Span } from './Span'
 import { useFS } from '../../context/FsContext'
 import { getNode } from '../../service/FS.service'
@@ -23,6 +23,7 @@ interface TabChipProps {
 
 export function TabChip(props: TabChipProps) {
 	const { fs } = useFS()
+	const { currentColor } = useTheme()
 	const node = () => getNode(fs, props.path) ?? fs
 	const [isHovered, setIsHovered] = createSignal(false)
 
@@ -43,7 +44,8 @@ export function TabChip(props: TabChipProps) {
 			onMouseOut={() => setIsHovered(false)}
 			onContextMenu={props.onContextMenu}
 			onClick={() => props.onClick?.()}
-			class={`px-1.5 py-1.5 focus:outline-none text-xs items-center flex cursor-pointer relative z-50 box-border border-t-1 gap-1 transition-transform duration-150 hover:translate-y-[-2px]`}
+			class={`px-1.5 py-1.5 focus:outline-none text-xs items-center flex cursor-pointer relative z-50 box-border border-t-1 gap-1`}
+			// transition-transform duration-150 hover:translate-y-[-2px]
 			style={{
 				'border-color': props.selected ? currentColor() : 'transparent',
 				...(widthStyle() || {})

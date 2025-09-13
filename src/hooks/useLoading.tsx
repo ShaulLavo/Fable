@@ -1,6 +1,4 @@
-import { createSignal, createMemo } from 'solid-js'
-import { isLoading } from '../stores/measureStore'
-import { setIsTsLoading } from '../stores/editorStore'
+import { createMemo, createSignal } from 'solid-js'
 
 export const useLoading = () => {
 	const [loaderCount, setLoaderCount] = createSignal(0)

@@ -9,16 +9,8 @@ import ImageViewer from '../ImageViewer'
 import { useFS } from '../../context/FsContext'
 import { useFileExtension } from '../../hooks/useFileExtension'
 import { file } from 'opfs-tools'
-import {
-	currentBackground,
-	dragHandleColor,
-	secondaryColor
-} from '../../stores/themeStore'
-import {
-	isZenMode,
-	setIsZenMode,
-	updateEditorPanelSize
-} from '../../stores/appStateStore'
+import { useTheme } from '../../context/ThemeContext'
+import { useAppState } from '../../context/AppStateContext'
 import Icon from '../ui/Icon'
 import { cn } from '../../utils/cn'
 import { useCurrentFile } from '../../hooks/useCurrentFile'
@@ -36,6 +28,8 @@ interface EditorLayoutProps {
 }
 
 function EditorLayout(_props: EditorLayoutProps) {
+    const { isZenMode, setIsZenMode, updateEditorPanelSize } = useAppState()
+    const { currentBackground, dragHandleColor, secondaryColor } = useTheme()
 	const { isBinary, isImage } = useFileExtension()
 	const { currentFile } = useFS()
 	const [fileBuffer, setFileBuffer] = createSignal<Uint8Array>()

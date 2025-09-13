@@ -9,11 +9,13 @@ import { getNode } from '../../service/FS.service'
 import { TabChip } from '../ui/TabChip'
 import ChatModelDropdown from './ChatModelDropdown'
 import { StickToBottom } from '../StickToBottom'
-import { currentBackground } from '../../stores/themeStore'
-import { panelGap } from '../../stores/appStateStore'
+import { useTheme } from '../../context/ThemeContext'
+import { useAppState } from '../../context/AppStateContext'
 
 export default function ChatInner(props: { api: ChatApi }) {
+	const { panelGap } = useAppState()
 	const { fs, setCurrentNode } = useFS()
+    const { currentBackground } = useTheme()
 
 	const {
 		messages,

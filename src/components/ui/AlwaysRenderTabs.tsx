@@ -1,10 +1,5 @@
 import { createSignal, For, JSX } from 'solid-js'
-import {
-	currentBackground,
-	currentColor,
-	secondaryBackground,
-	secondaryColor
-} from '../../stores/themeStore'
+import { useTheme } from '../../context/ThemeContext'
 
 type Tab = {
 	id: string
@@ -23,6 +18,7 @@ export function Tabs(props: TabsProps) {
 	const [activeTabId, setActiveTabId] = createSignal(
 		props.defaultTabId || props.tabs[0]?.id
 	)
+	const { currentBackground, currentColor, secondaryBackground, secondaryColor } = useTheme()
 	const currentTab = () => props.tabs.find(tab => tab.id === activeTabId())
 	return (
 		<div class={`w-full h-full flex flex-col min-h-0 ${props.className || ''}`}>

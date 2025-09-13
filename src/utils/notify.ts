@@ -1,13 +1,10 @@
 import { toast } from 'solid-sonner'
-import {
-	currentColor,
-	dragHandleColor,
-	secondaryBackground
-} from '../stores/themeStore'
+import { useTheme } from '../context/ThemeContext'
 
 type ToastOpts = { duration?: number; description?: string }
 
 function themedStyle() {
+	const { currentColor, dragHandleColor, secondaryBackground } = useTheme()
 	return {
 		'background-color': secondaryBackground(),
 		color: currentColor(),

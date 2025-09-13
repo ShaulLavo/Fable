@@ -1,7 +1,7 @@
 import Dialog from '@corvu/dialog'
 import { JSX, createSignal, onCleanup, onMount, Show } from 'solid-js'
 import { Portal } from 'solid-js/web'
-import { currentBackground, currentColor } from '../../stores/themeStore'
+import { useTheme } from '../../context/ThemeContext'
 
 type Action = {
 	label: string
@@ -28,6 +28,7 @@ export function openConfirm(opts: ConfirmOptions) {
 export const ConfirmDialogHost = () => {
 	const [open, setOpen] = createSignal(false)
 	const [options, setOptions] = createSignal<ConfirmOptions | null>(null)
+	const { currentBackground, currentColor } = useTheme()
 	let resolver: (value: string) => void = () => {}
 
 	const close = (value: string) => {

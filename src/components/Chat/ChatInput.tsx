@@ -1,13 +1,7 @@
 import { createSignal, onMount } from 'solid-js'
 import Icon from '../ui/Icon'
 import { Button } from '../ui/Button'
-import {
-	currentBackground,
-	currentColor,
-	dragHandleColor,
-	secondaryBackground,
-	secondaryColor
-} from '../../stores/themeStore'
+import { useTheme } from '../../context/ThemeContext'
 
 interface ChatInputProps {
 	value: string
@@ -22,6 +16,7 @@ interface ChatInputProps {
 
 export function ChatInput(props: ChatInputProps) {
 	const [isFocused, setIsFocused] = createSignal(false)
+	const { currentBackground, currentColor, secondaryColor } = useTheme()
 	let inputRef: HTMLTextAreaElement = null!
 
 	const handleKeyDown = (e: KeyboardEvent) => {

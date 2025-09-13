@@ -1,7 +1,7 @@
 import { JSX } from 'solid-js'
 import { FSNode, isFolder } from '../../types/FS.types'
 import Icon from '../ui/Icon'
-import { secondaryBackground } from '../../stores/themeStore'
+import { useTheme } from '../../context/ThemeContext'
 
 export const Arrow = (props: {
 	node: FSNode
@@ -12,6 +12,7 @@ export const Arrow = (props: {
 	>
 	fontSize: number
 }) => {
+    const { secondaryBackground } = useTheme()
 	if (props.node.path === '/' || !isFolder(props.node)) return null
 	return (
 		<span

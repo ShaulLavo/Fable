@@ -2,12 +2,7 @@ import { VirtualList } from '@solid-primitives/virtual'
 import { Component, For, Show, createMemo, createSignal } from 'solid-js'
 import { Spinner, SpinnerType } from 'solid-spinner'
 import { useFS } from '../context/FsContext'
-import {
-	bracketColors,
-	currentBackground,
-	currentColor,
-	secondaryColor
-} from '../stores/themeStore'
+import { useTheme } from '../context/ThemeContext'
 
 const rowHeight = 24
 
@@ -17,6 +12,7 @@ function byteToHex(byte: number): string {
 
 const BinaryFileViewer: Component<{ fileData?: Uint8Array }> = props => {
 	const { currentFile } = useFS()
+    const { bracketColors, currentBackground, currentColor, secondaryColor } = useTheme()
 	const [hoveredIndex, setHoveredIndex] = createSignal<number | null>(null)
 	const [containerRef, setContainerRef] = createSignal<HTMLDivElement>(null!)
 	// const bounds = createElementBounds(containerRef)

@@ -5,25 +5,26 @@ import { formatCode, getConfigFromExt } from './format'
 // import { code, setCode } from '~/stores/editorStore'
 import { File, Folder } from '../types/FS.types'
 import { getNode } from '../service/FS.service'
-import {
-	setIsSearchBar,
-	toggleSideBar,
-	toggleTerminal
-} from '../stores/appStateStore'
 import hotkeys from 'hotkeys-js'
 import { Accessor } from 'solid-js'
 import { themedToast } from './notify'
 import { isDirty, clearDirty, setBaseline } from '../stores/dirtyStore'
 
-hotkeys('ctrl+b,command+b', toggleSideBar)
-hotkeys('ctrl+p,command+p', e => {
-	e.preventDefault()
-	setIsSearchBar(p => !p)
-})
-hotkeys('ctrl+j,command+j', e => {
-	e.preventDefault()
-	toggleTerminal()
-})
+export function registerGlobalHotkeys(actions: {
+  toggleSideBar: () => boolean
+  setIsSearchBar: (fn: (p: boolean) => boolean) => void
+  toggleTerminal: () => boolean
+}) {
+  hotkeys('ctrl+b,command+b', actions.toggleSideBar)
+  hotkeys('ctrl+p,command+p', e => {
+    e.preventDefault()
+    actions.setIsSearchBar(p => !p)
+  })
+  hotkeys('ctrl+j,command+j', e => {
+    e.preventDefault()
+    actions.toggleTerminal()
+  })
+}
 // Editor-scoped Mod-J is added in createKeymap below
 // hotkeys('ctrl+p', toggleSideBar)
 
@@ -46,13 +47,18 @@ export function createKeymap(
 	fs: Folder,
 	extraKeymap: KeyBinding[] = [],
 	view: Accessor<EditorView>,
-	skipSync: (b: boolean) => void
+	skipSync: (b: boolean) => void,
+	actions: {
+		setIsSearchBar: (fn: (p: boolean) => boolean) => void
+		toggleSideBar: () => boolean
+		toggleTerminal: () => boolean
+	}
 ) {
 	const additionalKeymap = [
 		{
 			key: 'Mod-j',
 			run: () => {
-				toggleTerminal()
+				actions.toggleTerminal()
 				return true
 			},
 			preventDefault: true,
@@ -122,7 +128,7 @@ export function createKeymap(
 		{
 			key: 'Mod-b',
 			run: () => {
-				toggleSideBar()
+				actions.toggleSideBar()
 				return true
 			},
 			preventDefault: true,
@@ -132,7 +138,7 @@ export function createKeymap(
 		{
 			key: 'Mod-p',
 			run: () => {
-				setIsSearchBar(p => !p)
+				actions.setIsSearchBar(p => !p)
 				return true
 			},
 			preventDefault: true,

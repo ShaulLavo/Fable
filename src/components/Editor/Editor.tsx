@@ -12,7 +12,7 @@ import {
 	start
 } from '../../stores/editorStore'
 import { historyField } from '@codemirror/commands'
-import { ThemeKey, setTheme } from '../../stores/themeStore'
+import { ThemeKey, useTheme } from '../../context/ThemeContext'
 import { setFormatter } from '../../utils/format'
 
 import { useFS } from '../../context/FsContext'
@@ -20,14 +20,9 @@ import { useCurrentFile } from '../../hooks/useCurrentFile'
 import { useFileExtension } from '../../hooks/useFileExtension'
 import { useExtensions } from './useExtensions'
 import { inlineSuggestion } from 'codemirror-extension-inline-suggestion'
-import { llmSuggest } from '../../stores/llmStore'
-import { terminalBounds } from '../../stores/terminalStore'
-import {
-	CURRENT_PATH_BAR_HEIGHT,
-	EDITOR_TAB_HEIGHT,
-	isStatusBar,
-	STATUS_BAR_HEIGHT
-} from '../../stores/appStateStore'
+import { useLlm } from '../../context/LlmContext'
+import { useTerminal } from '../../context/TerminalContext'
+import { useAppState } from '../../context/AppStateContext'
 
 export interface EditorProps {
 	defaultTheme?: ThemeKey
@@ -43,13 +38,24 @@ export const Editor = ({
 	const { openFiles, currentFile } = useFS()
 	const { currentFileContent: code } = useCurrentFile(currentFile, openFiles)
 
+	const { terminalBounds } = useTerminal()
+
+	const {
+		CURRENT_PATH_BAR_HEIGHT,
+		EDITOR_TAB_HEIGHT,
+		isStatusBar,
+		STATUS_BAR_HEIGHT
+	} = useAppState()
+
 	const { isTs, isPython } = useFileExtension()
 
 	const [editorView, setView] = createSignal<EditorView>(null!)
 
 	const baseExtensions = useExtensions(index, editorView)
+	const { setTheme } = useTheme()
 
 	// Inline suggestion fetcher using the global LLM
+	const { llmSuggest } = useLlm()
 	const fetchSuggestion = async (state: EditorState) => {
 		try {
 			const pos = state.selection.main.head

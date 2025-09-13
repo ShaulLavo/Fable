@@ -1,9 +1,9 @@
 import { createEffect, JSX, splitProps } from 'solid-js'
 import { cn } from '../../utils/cn'
-import { isDark } from '../../stores/themeStore'
+import { useTheme } from '../../context/ThemeContext'
 import { useFS } from '../../context/FsContext'
 import { FSNode } from '../../types/FS.types'
-import { fontFamilyWithFallback } from '../../stores/fontStore'
+import { useFont } from '../../context/FontContext'
 
 type SpanProps = JSX.IntrinsicElements['span'] & {
 	selected?: boolean
@@ -12,7 +12,9 @@ type SpanProps = JSX.IntrinsicElements['span'] & {
 }
 
 export const Span = (props: SpanProps) => {
-	const [local, others] = splitProps(props, [
+    const { fontFamilyWithFallback } = useFont()
+    const { isDark } = useTheme()
+    const [local, others] = splitProps(props, [
 		'selected',
 		'enableHover',
 		'fontSize',

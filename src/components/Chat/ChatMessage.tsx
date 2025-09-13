@@ -1,4 +1,4 @@
-import { secondaryBackground, secondaryColor } from '../../stores/themeStore'
+import { useTheme } from '../../context/ThemeContext'
 import { cn } from '../../utils/cn'
 import { Message } from './Chat'
 
@@ -9,6 +9,7 @@ interface ChatMessageProps {
 }
 
 export function ChatMessage(props: ChatMessageProps) {
+	const { secondaryBackground, secondaryColor } = useTheme()
 	const isUser = () => props.message.role === 'user'
 
 	return (

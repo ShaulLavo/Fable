@@ -3,7 +3,7 @@ import { createEffect, createSignal, For, onCleanup, Show } from 'solid-js'
 import { Portal } from 'solid-js/web'
 import { Span } from '../components/ui/Span'
 import Icon from '../components/ui/Icon'
-import { currentBackground, secondaryColor } from '../stores/themeStore'
+import { useTheme } from './ThemeContext'
 import { unwrap } from 'solid-js/store'
 
 export type ContextMenuItem =
@@ -109,6 +109,7 @@ function ContextMenuItemComponent(props: {
 }
 
 export function ContextMenu(props: ContextMenuProps) {
+    const { currentBackground, secondaryColor } = useTheme()
 	const [menuElement, setMenuElement] = createSignal<HTMLDivElement | null>(
 		null
 	)

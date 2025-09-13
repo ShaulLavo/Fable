@@ -19,13 +19,14 @@ import { useOPFS } from '../../hooks/useOPFS'
 import { File, isFolder } from '../../types/FS.types'
 import { isDirty, clearDirty, setBaseline } from '../../stores/dirtyStore'
 import { openConfirm } from '../ui/ConfirmDialog'
-import { EDITOR_TAB_HEIGHT } from '../../stores/appStateStore'
+import { useAppState } from '../../context/AppStateContext'
 
 interface EditorTabsProps {
 	index: number
 }
 
 export const EditorTabs: Component<EditorTabsProps> = ({ index }) => {
+	const { EDITOR_TAB_HEIGHT } = useAppState()
 	const { tabs } = useFS()
 	let tabContainer: HTMLDivElement = null!
 	onMount(() => {

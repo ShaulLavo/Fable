@@ -15,7 +15,7 @@ import {
     setModelStatusText,
     setLastModelId
 } from '../../stores/modelStatusStore'
-import { provider, localModelId, vercelModelId } from '../../stores/llmStore'
+import { useLlm } from '../../context/LlmContext'
 
 const marked = new Marked(
 	markedHighlight({
@@ -69,6 +69,8 @@ export function useChat(api: ChatApi) {
         const ext = currentExtension()
         return `You are a helpful coding assistant. Use the following current tab as primary context for your response when relevant.\nCurrent tab: ${file.path}\nContent:\n\n\`\`\`${ext || ''}\n${snippet}\n\`\`\``
     }
+
+	const { provider, localModelId, vercelModelId } = useLlm()
 
 	const initChat = async () => {
 		// Prepare model status for status bar

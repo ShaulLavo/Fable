@@ -7,7 +7,7 @@ import {
 } from 'solid-js'
 import { animate, inView } from 'motion'
 import { cn } from '../../utils/cn'
-import { currentColor } from '../../stores/themeStore'
+import { useTheme } from '../../context/ThemeContext'
 
 type NumberTickerProps = JSX.IntrinsicElements['span'] & {
 	value: number
@@ -20,6 +20,7 @@ type NumberTickerProps = JSX.IntrinsicElements['span'] & {
 }
 
 export function NumberTicker(allProps: NumberTickerProps) {
+    const { currentColor } = useTheme()
 	const [props, others] = splitProps(allProps, [
 		'value',
 		'startValue',

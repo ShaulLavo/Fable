@@ -8,20 +8,10 @@ import {
 	onMount
 } from 'solid-js'
 import ChatInner from './ChatInner'
-import {
-    currentBackground,
-    currentColor,
-    dragHandleColor,
-    secondaryBackground
-} from '../../stores/themeStore'
-import { isStatusBar } from '../../stores/appStateStore'
+import { useTheme } from '../../context/ThemeContext'
+import { useAppState } from '../../context/AppStateContext'
 import { cn } from '../../utils/cn'
-import {
-	getEngine,
-	provider,
-	localModelId,
-	vercelModelId
-} from '../../stores/llmStore'
+import { useLlm } from '../../context/LlmContext'
 import { TabChip } from '../ui/TabChip'
 import { useFS } from '../../context/FsContext'
 import { getNode } from '../../service/FS.service'
@@ -34,7 +24,11 @@ export type Message = {
 	role: 'user' | 'assistant'
 }
 export const Chat = () => {
+    const { isStatusBar } = useAppState()
+    const { currentBackground } = useTheme()
 	const [api, setApi] = createSignal<any>(null)
+
+	const { getEngine, provider, localModelId, vercelModelId } = useLlm()
 
 	const loadApi = async () => {
 		const [{ default: ChatApi }] = await Promise.all([import('./ChatApi')])

@@ -1,4 +1,4 @@
-import { bracketColors } from '../stores/themeStore'
+import { useTheme } from '../context/ThemeContext'
 const clamp = (value: number, min: number, max: number): number =>
 	Math.max(min, Math.min(value, max))
 
@@ -44,6 +44,7 @@ export const getDarkerRgbColor = (
 }
 
 export const createColorCycler = () => {
+	const { bracketColors } = useTheme()
 	const colors = Object.values(bracketColors())
 	let index = 0
 

@@ -12,22 +12,9 @@ import {
 	getAvailableModels,
 	isGatewayConfigured
 } from './Gateway'
-import {
-	LlmProvider,
-	localModelId,
-	localModels,
-	provider,
-	setActiveLocalModel,
-	setProvider,
-	setVercelModelId,
-	vercelModelId
-} from '../../stores/llmStore'
+import { useLlm, type LlmProvider } from '../../context/LlmContext'
 import { cn } from '../../utils/cn'
-import {
-	currentBackground,
-	currentBackground,
-	secondaryBackground
-} from '../../stores/themeStore'
+import { useTheme } from '../../context/ThemeContext'
 
 export type ModelItem = { id: string; name: string }
 
@@ -35,6 +22,15 @@ export default function ChatModelSelector(props: {
 	open: boolean
 	onClose: () => void
 }) {
+	const {
+		provider,
+		setProvider,
+		localModels,
+		localModelId,
+		vercelModelId,
+		setActiveLocalModel,
+		setVercelModelId
+	} = useLlm()
 	const [activeTab, setActiveTab] = createSignal<LlmProvider>(provider())
 	const [vercelModels, setVercelModels] = createSignal<ModelItem[]>([])
 	const [loading, setLoading] = createSignal(false)
@@ -66,6 +62,7 @@ export default function ChatModelSelector(props: {
 
 	if (!props.open) return null
 
+	const { currentBackground, secondaryBackground } = useTheme()
 	return (
 		<div class="absolute inset-0 z-40">
 			<div

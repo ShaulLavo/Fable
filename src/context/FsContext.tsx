@@ -19,7 +19,6 @@ import { EMPTY_NODE_NAME } from '../consts/FS'
 import { LOCAL_STORAGE_CAP, STORAGE_KEYS } from '../consts/storage'
 import { useCurrentFile } from '../hooks/useCurrentFile'
 import { useOPFS } from '../hooks/useOPFS'
-import { useMockFS } from '../mocks/FsContext.mock'
 import {
 	folderHas,
 	getFolder,
@@ -27,7 +26,7 @@ import {
 	getParent,
 	sortTreeInDraft
 } from '../service/FS.service'
-import { rootName, setIsFsLoading } from '../stores/appStateStore'
+import { useAppState } from '../context/AppStateContext'
 import { setBaseline } from '../stores/dirtyStore'
 import { editorMounted, setStart, start } from '../stores/editorStore'
 import { File, Folder, FSNode, isFolder } from '../types/FS.types'
@@ -64,43 +63,52 @@ export interface FSContext {
 
 const FSContext = createContext<FSContext>()
 
-const EMPTY_ROOT = {
-	name: rootName(),
-	path: '',
-	children: [],
-	isOpen: true
-}
+// computed inside provider using useAppState()
 
-const isEmptyNode = (node: FSNode) => {
-	let nodeCopy = { ...node, children: [...((node as Folder)?.children ?? [])] }
-
-	if (isFolder(nodeCopy) && nodeCopy.name === rootName()) {
-		nodeCopy.children = nodeCopy.children.filter(
-			child => !SYSTEM_PATHS.includes(child.path)
-		)
-	} else return false
-
-	const rootPaths = ['', '/']
-	return (
-		nodeCopy.isOpen &&
-		nodeCopy.children.length === 0 &&
-		rootPaths.includes(nodeCopy.path)
-	)
-}
+// isEmptyNode is computed within FSProvider where rootName is available
 export const isMock = false
 export const FSProvider: ParentComponent<{ initialTree?: Folder }> = props => {
+	const { rootName, setIsFsLoading } = useAppState()
+	const EMPTY_ROOT = {
+		name: rootName(),
+		path: '',
+		children: [],
+		isOpen: true
+	}
+	const isEmptyNode = (node: FSNode) => {
+		let nodeCopy = {
+			...node,
+			children: [...((node as Folder)?.children ?? [])]
+		}
+
+		if (isFolder(nodeCopy) && nodeCopy.name === rootName()) {
+			nodeCopy.children = nodeCopy.children.filter(
+				child => !SYSTEM_PATHS.includes(child.path)
+			)
+		} else return false
+
+		const rootPaths = ['', '/']
+		return (
+			nodeCopy.isOpen &&
+			nodeCopy.children.length === 0 &&
+			rootPaths.includes(nodeCopy.path)
+		)
+	}
 	const savedData = JSON.parse(
 		localStorage.getItem(STORAGE_KEYS.FS) ?? 'null'
 	) as Folder | null
 
 	const [fs, setFs] = makePersisted(
-		createStore<Folder>(savedData ?? EMPTY_ROOT),
+		createStore<Folder>(savedData ?? props.initialTree ?? EMPTY_ROOT),
 		{
 			name: STORAGE_KEYS.FS
 		}
 	)
 	const OPFS = useOPFS()
-
+	const runWhenIdle = (cb: () => void) =>
+		'requestIdleCallback' in window
+			? window.requestIdleCallback(cb)
+			: setTimeout(cb, 0)
 	createEffect(
 		on(
 			editorMounted,
@@ -108,7 +116,12 @@ export const FSProvider: ParentComponent<{ initialTree?: Folder }> = props => {
 				if (!mounted) return
 				try {
 					// OPFS is the source of truth
-					let tree = await OPFS.tree(fs)
+					let tree = await new Promise<Folder>(resolve => {
+						runWhenIdle(async () => {
+							const t = await OPFS.tree(fs)
+							resolve(t)
+						})
+					})
 					if (!isEmptyNode(tree)) {
 						tree.name = rootName()
 						setFs(sortTreeInDraft(tree))
@@ -124,30 +137,43 @@ export const FSProvider: ParentComponent<{ initialTree?: Folder }> = props => {
 						return
 					}
 					setIsFsLoading(true)
-					// GET DEMO DATA
-					const fable = import.meta.glob('../**/*', {
-						exhaustive: true,
-						import: '*',
-						query: '?raw',
-						eager: true
-						// eager: isDev ? false : true
-					}) as Record<string, { default: string }>
+					// Seed demo data lazily to avoid blocking first paint
 
-					const promises = Object.entries(fable).map(([path, content]) => {
-						const name = path.split('/').pop()
+					// Use non-eager glob so files are code-split and loaded on demand
+					// const modules = import.meta.glob('../**/*?raw') as Record<
+					// 	string,
+					// 	() => Promise<any>
+					// >
 
-						if (!name) return
-						if (path.startsWith('../')) {
-							path = path.slice(2)
-						}
-						if (path.startsWith('./')) {
-							path = path.slice(1)
-						}
-						// console.log(name, path, content.default)
-						return OPFS.saveFile({ name, path }, content.default)
+					// await new Promise<void>(resolve => {
+					// 	const entries = Object.entries(modules)
+					// 	let i = 0
+					// 	const step = async () => {
+					// 		if (i >= entries.length) return resolve()
+					// 		let [p, importer] = entries[i++]
+					// 		const name = p.split('/').pop()
+					// 		if (!name) return runWhenIdle(step)
+					// 		if (p.startsWith('../')) p = p.slice(2)
+					// 		if (p.startsWith('./')) p = p.slice(1)
+					// 		try {
+					// 			const mod = await importer()
+					// 			const content: string =
+					// 				typeof mod === 'string' ? mod : (mod?.default ?? '')
+					// 			await OPFS.saveFile({ name, path: p }, content)
+					// 		} catch (e) {
+					// 			console.warn('Seed save failed for', p, e)
+					// 		}
+					// 		runWhenIdle(step)
+					// 	}
+					// 	runWhenIdle(step)
+					// })
+
+					tree = await new Promise<Folder>(resolve => {
+						runWhenIdle(async () => {
+							const t = await OPFS.tree(fs)
+							resolve(t)
+						})
 					})
-					await Promise.all(promises)
-					tree = await OPFS.tree(fs)
 					tree.name = rootName()
 					setFs(sortTreeInDraft(tree))
 					setCurrentNode(fs.children.find(n => n.name === 'App.tsx')!)
@@ -173,27 +199,33 @@ export const FSProvider: ParentComponent<{ initialTree?: Folder }> = props => {
 			async mounted => {
 				if (!mounted) return
 
-				let tabsFromStorage = localStorage.getItem(STORAGE_KEYS.TABS)
-				if (tabsFromStorage) {
-					tabsFromStorage = JSON.parse(tabsFromStorage)
-					if (!Array.isArray(tabsFromStorage)) return
+				// Restore tabs and contents after idle to avoid blocking paint
+				await new Promise<void>(resolve => {
+					runWhenIdle(async () => {
+						let tabsFromStorage = localStorage.getItem(STORAGE_KEYS.TABS)
+						if (tabsFromStorage) {
+							tabsFromStorage = JSON.parse(tabsFromStorage)
+							if (Array.isArray(tabsFromStorage)) {
+								const results = await Promise.all(
+									tabsFromStorage.filter(Boolean).map(async (path: string) => {
+										const file = getNode(fs, path)
+										if (!file) return
+										const content = await OPFS.getFile(file)
+										return { path: file.path, content: content ?? '' }
+									})
+								)
 
-					const promises = tabsFromStorage
-						.filter(Boolean)
-						.map(async (path: string) => {
-							const file = getNode(fs, path)
-							if (!file) return
-							const content = await OPFS.getFile(file)
-							return { path: file.path, content: content ?? '' }
-						})
-
-					;(await Promise.all(promises))
-						.filter(p => !!p)
-						.forEach(({ path, content }) => {
-							openFiles.set(path, content)
-							setBaseline(path, content)
-						})
-				}
+								results
+									.filter((p): p is { path: string; content: string } => !!p)
+									.forEach(({ path, content }) => {
+										openFiles.set(path, content)
+										setBaseline(path, content)
+									})
+							}
+						}
+						resolve()
+					})
+				})
 				console.info(
 					`tab sync took ${(performance.now() - start()).toFixed(2)} ms`
 				)
@@ -593,7 +625,6 @@ export const FSProvider: ParentComponent<{ initialTree?: Folder }> = props => {
 }
 
 export function useFS() {
-	if (isMock) return useMockFS()
 	const context = useContext(FSContext)
 	if (!context) throw new Error('useFS must be used within a FSProvider')
 	return context

@@ -5,11 +5,11 @@ import { useFS } from '../../context/FsContext'
 import { createInnerZoom } from '../../hooks/createInnerZoom'
 import { useOPFS } from '../../hooks/useOPFS'
 import Icon from '../ui/Icon'
-import { secondaryColor, secondaryBackground } from '../../stores/themeStore'
+import { useTheme } from '../../context/ThemeContext'
 import { Span } from '../ui/Span'
 import { FileSystemTree } from './FileSystemTree'
 import { GlobalLoader, Loader } from '../GlobalLoader'
-import { isFsLoading } from '../../stores/appStateStore'
+import { useAppState } from '../../context/AppStateContext'
 
 interface FileSystemProps {}
 
@@ -32,18 +32,16 @@ export function FileSystem(props: FileSystemProps) {
 		key: 'explorer'
 	})
 
-    const noScrollbarCss = `
-    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    `
+	const { isFsLoading } = useAppState()
+    const { secondaryColor, secondaryBackground } = useTheme()
 
-    return (
-        <div
-            class="flex flex-col min-w-28 relative z-80 h-full min-h-0"
-            ref={setEditorContainer}
-            style={{
-                'background-color': secondaryBackground(),
-                color: secondaryColor()
+	return (
+		<div
+			class="flex flex-col min-w-28 relative z-80 h-full min-h-0"
+			ref={setEditorContainer}
+			style={{
+				'background-color': secondaryBackground(),
+				color: secondaryColor()
 				// 'z-index': 80,
 				// position: 'relative'
 			}}
@@ -89,13 +87,12 @@ export function FileSystem(props: FileSystemProps) {
 					</Span>
 				</div>
 			</div>
-            <style>{noScrollbarCss}</style>
-            <div class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden no-scrollbar">
-                <For each={fs.children}>
-                    {node => (
-                        <FileSystemTree
-                            node={node}
-                            fontSize={fontSize()}
+			<div class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden no-scrollbar">
+				<For each={fs.children}>
+					{node => (
+						<FileSystemTree
+							node={node}
+							fontSize={fontSize()}
 							isContainerHovered={isHovered()}
 						/>
 					)}

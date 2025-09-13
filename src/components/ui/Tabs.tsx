@@ -1,10 +1,5 @@
 import { createSignal, For, JSX, Show } from 'solid-js'
-import {
-  currentBackground,
-  currentColor,
-  secondaryBackground,
-  secondaryColor
-} from '../../stores/themeStore'
+import { useTheme } from '../../context/ThemeContext'
 
 type Tab = {
   id: string
@@ -20,6 +15,7 @@ type TabsProps = {
 }
 
 export function Tabs(props: TabsProps) {
+  const { currentBackground, currentColor, secondaryBackground, secondaryColor } = useTheme()
   const [activeTabId, setActiveTabId] = createSignal(
     props.defaultTabId || props.tabs[0]?.id
   )
@@ -82,4 +78,3 @@ export function Tabs(props: TabsProps) {
     </div>
   )
 }
-

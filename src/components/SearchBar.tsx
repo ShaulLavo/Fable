@@ -2,18 +2,13 @@ import { createEffect, createSignal, For, on, onMount, Show } from 'solid-js'
 import { BsSearch, BsGear } from 'solid-icons/bs'
 import { useFS } from '../context/FsContext'
 import { collectItems, getNode } from '../service/FS.service'
-import {
-	currentBackground,
-	currentColor,
-	secondaryBackground,
-	secondaryColor
-} from '../stores/themeStore'
+import { useTheme, ThemeKey } from '../context/ThemeContext'
 import { Dynamic } from 'solid-js/web'
-import { isSearchBar, setIsSearchBar } from '../stores/appStateStore'
+import { useAppState } from '../context/AppStateContext'
 import { autofocus } from '@solid-primitives/autofocus'
 import { isFolder } from '../types/FS.types'
 import { themeSettings } from '../consts/themeSettings'
-import { ThemeKey, setTheme, currentThemeName } from '../stores/themeStore'
+
 
 type FSItem = ReturnType<typeof collectItems> extends Array<infer T> ? T : never
 
@@ -36,6 +31,8 @@ type ThemeItem = {
 type SearchItem = FSItem | CommandItem | ThemeItem
 
 export default function SearchPalette() {
+    const { isSearchBar, setIsSearchBar } = useAppState()
+    const { currentBackground, currentColor, secondaryBackground, secondaryColor, setTheme, currentThemeName } = useTheme()
 	const { fs, setCurrentNode } = useFS()
 	const [searchBar, setSearchBar] = createSignal<HTMLDivElement>(null!)
 	const [currentFolder, setCurrentFolder] = createSignal(fs)

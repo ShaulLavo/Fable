@@ -11,8 +11,8 @@ import type { DynamicProps, HandleProps, RootProps } from '@corvu/resizable'
 import ResizablePrimitive, { usePanelContext } from '@corvu/resizable'
 
 import { cn } from '../../utils/cn'
-import { currentBackground, currentColor } from '../../stores/themeStore'
-import { panelGap } from '../../stores/appStateStore'
+import { useTheme } from '../../context/ThemeContext'
+import { useAppState } from '../../context/AppStateContext'
 import { style } from 'solid-js/web'
 import { getTransparentColor } from '../../utils/color'
 
@@ -86,11 +86,13 @@ function createOrientationRef(set: (o: Orientation) => void) {
 const ResizableHandle = <T extends ValidComponent = 'button'>(
 	props: DynamicProps<T, ResizableHandleProps<T>>
 ) => {
+	const { panelGap } = useAppState()
 	const [, rest] = splitProps(props as ResizableHandleProps, [
 		'class',
 		'withHandle',
 		'style'
 	])
+	const { currentColor } = useTheme()
 	const [orientation, setOrientation] = createSignal<Orientation>('horizontal')
 	const orientationRef = createOrientationRef(setOrientation)
 

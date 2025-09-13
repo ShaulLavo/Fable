@@ -42,12 +42,7 @@ import {
 	showLineNumber,
 	worker
 } from '../../stores/editorStore'
-import {
-	currentBackground,
-	currentColor,
-	currentTheme,
-	isDark
-} from '../../stores/themeStore'
+import { useTheme } from '../../context/ThemeContext'
 import { extensionMap } from '../../utils/format'
 
 import { css } from '@codemirror/lang-css'
@@ -65,10 +60,12 @@ import Icon from '../ui/Icon'
 import { createColorCycler, getTransparentColor } from '../../utils/color'
 import { autoHide } from '../../utils/dom'
 import { createKeymap } from '../../utils/keymap'
+import { useAppState } from '../../context/AppStateContext'
 import { updateDirtyForPath } from '../../stores/dirtyStore'
 import { ProgrammaticChange } from '../../hooks/controlledValue'
 import { viewTransition } from '../../utils/viewTransition'
 import { useSetCode } from './useSetCode'
+import { WorkerShape } from '@valtown/codemirror-ts/worker'
 
 export const useExtensions = (
 	index: number,
@@ -101,6 +98,7 @@ export const useExtensions = (
 		setCurrentFileContent,
 		editorView
 	)
+	const { toggleTerminal, toggleSideBar, setIsSearchBar } = useAppState()
 	const KeyBindings: KeyBinding[] = []
 	const defaultKeymap = createKeymap(
 		openFiles,
@@ -112,7 +110,8 @@ export const useExtensions = (
 		fs,
 		KeyBindings,
 		editorView,
-		skipSync
+		skipSync,
+		{ toggleTerminal, toggleSideBar, setIsSearchBar }
 	)
 	const getBracketColor = createColorCycler()
 
@@ -183,6 +182,7 @@ export const useExtensions = (
 	)
 	createExtension(() => (showLineNumber?.() ? lineNumbers() : []))
 	createExtension(() => (isSystemPath() ? [] : rainbowBrackets()))
+	const { currentBackground, currentColor, currentTheme, isDark } = useTheme()
 	createExtension(currentTheme)
 	createExtension(() =>
 		showFoldGutter()
@@ -228,7 +228,10 @@ export const useExtensions = (
 		if (!isTs() || !isWorkerReady() || !worker || !currentFilePath()) return []
 
 		const base = [
-			tsFacetWorker.of({ worker: worker, path: currentFilePath()! }),
+			tsFacetWorker.of({
+				worker: worker as unknown as WorkerShape,
+				path: currentFilePath()!
+			}),
 			tsSyncWorker(),
 			tsHoverWorker()
 		]
@@ -247,8 +250,9 @@ export const useExtensions = (
 				fontSize: fontSize() + 'px'
 			},
 			'.cm-lineNumbers .cm-gutterElement': {
-				color: currentColor()
+				color: getTransparentColor(currentColor(), 0.8)
 			},
+			'.cm-activeLineGutter': {},
 			'.cm-gutterElement': {
 				display: 'flex',
 				alignItems: 'center',

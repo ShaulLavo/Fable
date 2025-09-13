@@ -7,18 +7,20 @@ import {
 	getAvailableModels,
 	isGatewayConfigured
 } from './Gateway'
-import {
-	localModelId,
-	localModels,
-	provider,
-	setActiveLocalModel,
-	setActiveProvider,
-	setActiveVercelModel,
-	vercelModelId
-} from '../../stores/llmStore'
-import { currentBackground, secondaryBackground } from '../../stores/themeStore'
+import { useLlm } from '../../context/LlmContext'
+import { useTheme } from '../../context/ThemeContext'
 
 export default function ChatModelDropdown() {
+    const { currentBackground, secondaryBackground } = useTheme()
+	const {
+		provider,
+		localModelId,
+		vercelModelId,
+		localModels,
+		setActiveLocalModel,
+		setActiveProvider,
+		setActiveVercelModel
+	} = useLlm()
 	const [loading, setLoading] = createSignal(false)
 	const [vercelModels, setVercelModels] = createSignal<
 		{ id: string; name: string }[]

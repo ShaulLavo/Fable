@@ -1,18 +1,15 @@
 import { JSX, ParentComponent } from 'solid-js'
 import { Resizable, ResizableHandle, ResizablePanel } from '../ui/Resizable'
-import { ChatPanelSize, setChatPanelSize } from '../../stores/appStateStore'
-import {
-	currentBackground,
-	dragHandleColor,
-	secondaryBackground,
-	secondaryColor
-} from '../../stores/themeStore'
+import { useAppState } from '../../context/AppStateContext'
+import { useTheme } from '../../context/ThemeContext'
 
 export const ChatLayout: ParentComponent<{
 	chat: JSX.Element
 	side?: 'left' | 'right'
 }> = props => {
+	const { ChatPanelSize, setChatPanelSize } = useAppState()
 	const side = () => props.side ?? 'right'
+    const { secondaryBackground, secondaryColor } = useTheme()
 	return (
 		<div
 			class="w-full h-full flex flex-1"
