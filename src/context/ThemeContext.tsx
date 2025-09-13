@@ -53,8 +53,8 @@ const isDark = () => currentThemeSettings().mode === 'dark'
 export const currentColor = () => currentThemeSettings().color
 export const currentBackground = () => currentThemeSettings().background
 export const dragHandleColor = () => getLighterRgbColor(currentBackground(), 1)
-export const secondaryColor = () => currentColor()
-export const secondaryBackground = () => currentBackground()
+export const secondaryColor = () => currentThemeSettings().secondaryColor
+export const secondaryBackground = () => currentThemeSettings().secondaryBackground
 
 export function ThemeProvider(props: { children: JSX.Element }) {
 	const bracketColors = () => currentThemeSettings().rainbowBracket

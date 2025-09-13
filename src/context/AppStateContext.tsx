@@ -78,7 +78,7 @@ export function AppStateProvider(props: { children: JSX.Element }) {
 		useLoading()
 
 	const { isLoading: isFsLoading, setIsLoading: setIsFsLoading } = useLoading()
-	const [panelGap] = createSignal(2)
+	const [panelGap] = createSignal(6)
 
 	const [rootName] = createSignal('root')
 

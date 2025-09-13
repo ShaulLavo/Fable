@@ -90,7 +90,7 @@ export const StatusBar: Component<StatusBarProps> = ({}) => {
 	return (
 		<Show when={isStatusBar()}>
 			<div
-				class="fixed bottom-0 left-0 right-0 w-full z-[100] flex border-t-2 p-1 items-center"
+				class="fixed bottom-0 left-0 right-0 w-full z-[100] flex p-1 items-center"
 				style={{
 					'background-color': secondaryBackground(),
 					'border-color': currentBackground(),

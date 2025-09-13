@@ -8,7 +8,11 @@ import {
 	on,
 	onMount
 } from 'solid-js'
-import { ThemeKey, useTheme } from '../../context/ThemeContext'
+import {
+	currentBackground,
+	ThemeKey,
+	useTheme
+} from '../../context/ThemeContext'
 import {
 	editorRefs,
 	editorScrollPositions,
@@ -218,7 +222,6 @@ export const Editor = ({
 	return (
 		<>
 			<div
-				class="border-b-2"
 				id="editor"
 				style={{
 					height:

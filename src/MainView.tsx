@@ -2,7 +2,11 @@ import Resizable from '@corvu/resizable'
 import { createEffect, createSignal, Show } from 'solid-js'
 import { FileSystem } from './components/FileSystem/FileSystem'
 import { useAppState } from './context/AppStateContext'
-import { useTheme } from './context/ThemeContext'
+import {
+	currentColor,
+	secondaryBackground,
+	useTheme
+} from './context/ThemeContext'
 
 //
 import { lazy } from 'solid-js'
@@ -52,8 +56,8 @@ export function MainView(props: MainViewProps) {
 				}}
 				class="w-full flex min-h-0"
 				style={{
-					'background-color': currentBackground(),
-					color: secondaryColor(),
+					'background-color': secondaryBackground(),
+					color: currentColor(),
 					height: isStatusBar()
 						? window.innerHeight - 28 + 'px'
 						: window.innerHeight + 'px',

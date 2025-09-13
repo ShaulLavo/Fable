@@ -18,7 +18,12 @@ export function Tabs(props: TabsProps) {
 	const [activeTabId, setActiveTabId] = createSignal(
 		props.defaultTabId || props.tabs[0]?.id
 	)
-	const { currentBackground, currentColor, secondaryBackground, secondaryColor } = useTheme()
+	const {
+		currentBackground,
+		currentColor,
+		secondaryBackground,
+		secondaryColor
+	} = useTheme()
 	const currentTab = () => props.tabs.find(tab => tab.id === activeTabId())
 	return (
 		<div class={`w-full h-full flex flex-col min-h-0 ${props.className || ''}`}>
@@ -29,10 +34,6 @@ export function Tabs(props: TabsProps) {
 							<button
 								class={`flex flex-col items-center px-3 py-2 rounded-t-lg transition-colors duration-200`}
 								style={{
-									'background-color':
-										activeTabId() === tab.id
-											? currentBackground()
-											: secondaryBackground(),
 									'border-bottom':
 										activeTabId() === tab.id
 											? `2px solid ${currentColor()}`

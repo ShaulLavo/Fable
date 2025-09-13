@@ -105,7 +105,7 @@ const ResizableHandle = <T extends ValidComponent = 'button'>(
 				props.class
 			)}
 			style={{
-				'background-color': getTransparentColor(currentColor(), 0.1),
+				'background-color': getTransparentColor(currentColor(), 0),
 				...(!isVertical() && { width: panelGap() + 'px' }),
 				...(isVertical() && { height: panelGap() + 'px' })
 				// 'border-radius': -panelGap() + 'px'
