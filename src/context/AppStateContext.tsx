@@ -8,7 +8,8 @@ import {
 	type JSX,
 	useContext,
 	Accessor,
-	Setter
+	Setter,
+	onMount
 } from 'solid-js'
 import { dualStorage } from '../utils/DualStorage'
 import { runOncePerTick } from '../utils/utils'
@@ -20,49 +21,59 @@ export const STATUS_BAR_HEIGHT = 28
 export const EDITOR_TAB_HEIGHT = 30.5
 export const CURRENT_PATH_BAR_HEIGHT = 16
 
+import { createEventBus, EventBus } from '@solid-primitives/event-bus'
+import { observeFirstContentfulPaint } from '../stores/measureStore'
+import { registerGlobalHotkeys } from '../utils/keymap'
+
 // Context shape
 type AppStateContextValue = {
-  panelGap: Accessor<number>
-  rootName: Accessor<string>
-  STATUS_BAR_HEIGHT: number
-  EDITOR_TAB_HEIGHT: number
-  CURRENT_PATH_BAR_HEIGHT: number
-  isGlobalLoading: Accessor<boolean>
-  setIsGlobalLoading: (loading: boolean) => void
-  isFsLoading: Accessor<boolean>
-  setIsFsLoading: (loading: boolean) => void
-  mainSideBarPosition: Accessor<'left' | 'right'>
-  setMainSideBarPosition: Setter<'left' | 'right'>
-  horizontalPanelSize: Accessor<number[]>
-  setHorizontalPanelSize: Setter<number[]>
-  verticalPanelSize: Accessor<number[]>
-  setVerticalPanelSize: Setter<number[]>
-  editorPanelSizes: Accessor<number[][]>
-  setEditorPanelSizes: Setter<number[][]>
-  ChatPanelSize: Accessor<number[]>
-  setChatPanelSize: Setter<number[]>
-  updateEditorPanelSize: (index: number, newSize: number[]) => void
-  lastKnownLeftSideBarSize: Accessor<[number, number]>
-  setLastKnownLeftSideBarSize: Setter<[number, number]>
-  lastKnownRightSideBarSize: Accessor<[number, number]>
-  setLastKnownRightSideBarSize: Setter<[number, number]>
-  toggleSideBar: () => boolean
-  setIsSideBar: (b: boolean) => boolean
-  isSideBar: () => boolean
-  isStatusBar: Accessor<boolean>
-  setIsStatusBar: Setter<boolean>
-  isSearchBar: Accessor<boolean>
-  setIsSearchBar: Setter<boolean>
-  isZenMode: Accessor<boolean>
-  setIsZenMode: Setter<boolean>
-  isTerminal: Accessor<boolean>
-  setIsTerminal: Setter<boolean>
-  toggleTerminal: () => boolean
+	panelGap: Accessor<number>
+	rootName: Accessor<string>
+	STATUS_BAR_HEIGHT: number
+	EDITOR_TAB_HEIGHT: number
+	CURRENT_PATH_BAR_HEIGHT: number
+	isGlobalLoading: Accessor<boolean>
+	setIsGlobalLoading: (loading: boolean) => void
+	isFsLoading: Accessor<boolean>
+	setIsFsLoading: (loading: boolean) => void
+	mainSideBarPosition: Accessor<'left' | 'right'>
+	setMainSideBarPosition: Setter<'left' | 'right'>
+	horizontalPanelSize: Accessor<number[]>
+	setHorizontalPanelSize: Setter<number[]>
+	verticalPanelSize: Accessor<number[]>
+	setVerticalPanelSize: Setter<number[]>
+	editorPanelSizes: Accessor<number[][]>
+	setEditorPanelSizes: Setter<number[][]>
+	ChatPanelSize: Accessor<number[]>
+	setChatPanelSize: Setter<number[]>
+	updateEditorPanelSize: (index: number, newSize: number[]) => void
+	lastKnownLeftSideBarSize: Accessor<[number, number]>
+	setLastKnownLeftSideBarSize: Setter<[number, number]>
+	lastKnownRightSideBarSize: Accessor<[number, number]>
+	setLastKnownRightSideBarSize: Setter<[number, number]>
+	toggleSideBar: () => boolean
+	setIsSideBar: (b: boolean) => boolean
+	isSideBar: () => boolean
+	isStatusBar: Accessor<boolean>
+	setIsStatusBar: Setter<boolean>
+	isSearchBar: Accessor<boolean>
+	setIsSearchBar: Setter<boolean>
+	isZenMode: Accessor<boolean>
+	setIsZenMode: Setter<boolean>
+	isTerminal: Accessor<boolean>
+	setIsTerminal: Setter<boolean>
+	toggleTerminal: () => boolean
+	hasPaintedBus: EventBus<boolean>
 }
 
 const AppStateContext = createContext<AppStateContextValue>()
 
 export function AppStateProvider(props: { children: JSX.Element }) {
+	const hasPaintedBus = createEventBus<boolean>()
+	onMount(async () => {
+		await observeFirstContentfulPaint()
+		hasPaintedBus.emit(true)
+	})
 	const { isLoading: isGlobalLoading, setIsLoading: setIsGlobalLoading } =
 		useLoading()
 
@@ -248,8 +259,14 @@ export function AppStateProvider(props: { children: JSX.Element }) {
 		setIsZenMode,
 		isTerminal,
 		setIsTerminal,
-		toggleTerminal
+		toggleTerminal,
+		hasPaintedBus
 	}
+
+	onMount(() => {
+		registerGlobalHotkeys({ toggleSideBar, setIsSearchBar, toggleTerminal })
+	})
+
 	createEffect(
 		on(
 			isZenMode,

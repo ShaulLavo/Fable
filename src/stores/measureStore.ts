@@ -66,19 +66,21 @@ const removeAction = (action: ACTIONS) => {
 	}
 }
 
-const observeFirstContentfulPaint = () => {
+export const observeFirstContentfulPaint = () => {
+	const { promise, resolve } = Promise.withResolvers<void>()
 	const observer = new PerformanceObserver(list => {
 		for (const entry of list.getEntries()) {
 			if (entry.name === 'first-contentful-paint') {
 				console.log(
 					`First Contentful Paint took ${entry.startTime.toFixed(2)} ms`
 				)
-				observer.disconnect() // Stop observing after capturing FCP
+
+				resolve()
+				observer.disconnect()
 			}
 		}
 	})
 
 	observer.observe({ type: 'paint', buffered: true })
+	return promise
 }
-
-observeFirstContentfulPaint()

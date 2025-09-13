@@ -49,20 +49,18 @@ export const EditorTabs: Component<EditorTabsProps> = ({ index }) => {
 	})
 
 	return (
-		<div>
-			<div
-				ref={tabContainer}
-				class="flex overflow-x-auto whitespace-nowrap z-50 relative no-scrollbar"
-				style={{ height: EDITOR_TAB_HEIGHT + 'px', 'padding-top': '2px' }}
-			>
-				<For each={tabs()}>
-					{(path, tabIndex) => (
-						<Show when={path}>
-							<Tab file={path} tabIndex={tabIndex} index={index} />
-						</Show>
-					)}
-				</For>
-			</div>
+		<div
+			ref={tabContainer}
+			class="flex overflow-x-auto whitespace-nowrap z-50 relative no-scrollbar"
+			style={{ height: EDITOR_TAB_HEIGHT + 'px', 'padding-top': '2px' }}
+		>
+			<For each={tabs()}>
+				{(path, tabIndex) => (
+					<Show when={path}>
+						<Tab file={path} tabIndex={tabIndex} index={index} />
+					</Show>
+				)}
+			</For>
 		</div>
 	)
 }
@@ -76,8 +74,7 @@ const Tab = ({
 	tabIndex: Accessor<number>
 	index: number
 }) => {
-	const { openFiles, fs, currentPath, setCurrentNode, currentNode, tabs } =
-		useFS()
+	const { openFiles, fs, setCurrentNode, currentNode, tabs } = useFS()
 	const { showContextMenu } = useContextMenu()
 	const OPFS = useOPFS()
 	const isSelected = () => currentNode().path === file
@@ -126,6 +123,7 @@ const Tab = ({
 		batch(async () => {
 			if (isSelected()) {
 				const currentIndex = tabIndex()
+				console.log('closing current tab', file, currentIndex)
 				if (openFiles.size === 1) {
 					setCurrentNode(fs)
 				} else if (currentIndex > 0) {
@@ -135,6 +133,7 @@ const Tab = ({
 				} else {
 					const path = tabs()[1]
 					const node = getNode(fs, path) ?? fs
+					console.log(path, node)
 					setCurrentNode(node)
 				}
 			}

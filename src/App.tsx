@@ -1,4 +1,10 @@
-import { Main } from './Main'
+import { Toaster } from 'solid-sonner'
+import { MainView } from './MainView'
+import { GlobalLoader } from './components/GlobalLoader'
+import SearchPalette from './components/SearchBar'
+import { StatusBar } from './components/StatusBar'
+import { ConfirmDialogHost } from './components/ui/ConfirmDialog'
+import { ContextMenu } from './context/ContextMenu'
 import { Providers } from './context/Providers'
 
 //TODO PERFORMANCE :
@@ -9,7 +15,20 @@ import { Providers } from './context/Providers'
 export default function App() {
 	return (
 		<Providers>
-			<Main />
+			<div
+				style={{
+					height: window.innerHeight + 'px',
+					overflow: 'hidden'
+				}}
+			>
+				<MainView sidebarSide="left" />
+				<SearchPalette />
+				<ConfirmDialogHost />
+				<ContextMenu />
+				<GlobalLoader />
+				<Toaster />
+				<StatusBar />
+			</div>
 		</Providers>
 	)
 }

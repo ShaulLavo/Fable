@@ -15,9 +15,7 @@ export type ContextMenuItem =
 	  }
 	| undefined
 
-interface ContextMenuProps {
-	onClose: () => void
-}
+interface ContextMenuProps {}
 
 const [position, setPosition] = createSignal<{ x: number; y: number } | null>(
 	null
@@ -25,6 +23,7 @@ const [position, setPosition] = createSignal<{ x: number; y: number } | null>(
 const [items, setItems] = createSignal<(ContextMenuItem | undefined)[]>([])
 
 function Dvider() {
+	const { secondaryColor } = useTheme()
 	return (
 		<li class="border-t my-1" style={{ 'border-color': secondaryColor() }}></li>
 	)
@@ -43,7 +42,7 @@ function ContextMenuItemComponent(props: {
 		props.item!.subMenuItems.length > 0
 	const showSubMenu = () => isSubMenu() && isHovered()
 	const bounds = createElementBounds(itemRef)
-
+	const { currentBackground, secondaryColor } = useTheme()
 	let timeout: ReturnType<typeof setTimeout>
 	return (
 		<li
@@ -109,21 +108,21 @@ function ContextMenuItemComponent(props: {
 }
 
 export function ContextMenu(props: ContextMenuProps) {
-    const { currentBackground, secondaryColor } = useTheme()
+	const { currentBackground, secondaryColor } = useTheme()
 	const [menuElement, setMenuElement] = createSignal<HTMLDivElement | null>(
 		null
 	)
-	// const bounds = createElementBounds(menuElement)
+	const { hideContextMenu } = useContextMenu()
 
 	createEffect(() => {
 		const handleOutsideClick = (e: MouseEvent) => {
 			if (menuElement() && !menuElement()!.contains(e.target as Node)) {
-				props.onClose()
+				hideContextMenu()
 			}
 		}
 		const handleEscape = (e: KeyboardEvent) => {
 			if (e.key === 'Escape') {
-				props.onClose()
+				hideContextMenu()
 			}
 		}
 		document.addEventListener('mousedown', handleOutsideClick)
@@ -157,7 +156,7 @@ export function ContextMenu(props: ContextMenuProps) {
 										y: position()!.y
 									}}
 									item={item}
-									onClose={props.onClose}
+									onClose={hideContextMenu}
 								/>
 							)}
 						</For>

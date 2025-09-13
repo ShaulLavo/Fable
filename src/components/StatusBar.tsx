@@ -1,4 +1,4 @@
-import { Component, For, Setter } from 'solid-js'
+import { Component, For, Setter, Show } from 'solid-js'
 import { useTheme } from '../context/ThemeContext'
 
 import { Spinner, SpinnerType } from 'solid-spinner'
@@ -34,11 +34,9 @@ interface Status {
 	loader?: Component
 }
 
-interface StatusBarProps {
-	ref: Setter<HTMLDivElement>
-}
+interface StatusBarProps {}
 
-export const StatusBar: Component<StatusBarProps> = ({ ref }) => {
+export const StatusBar: Component<StatusBarProps> = ({}) => {
 	const { STATUS_BAR_HEIGHT } = useAppState()
 	const { currentBackground, currentColor, secondaryBackground } = useTheme()
 	const { isTs } = useFileExtension()
@@ -46,6 +44,7 @@ export const StatusBar: Component<StatusBarProps> = ({ ref }) => {
 	const selectionText = () =>
 		selectionLength() > 0 ? `(${selectionLength()} selected)` : ''
 	const { baseFontSize } = useFont()
+	const { isStatusBar } = useAppState()
 	const statuses = () =>
 		[
 			{
@@ -89,10 +88,9 @@ export const StatusBar: Component<StatusBarProps> = ({ ref }) => {
 		] satisfies Status[]
 
 	return (
-		<>
+		<Show when={isStatusBar()}>
 			<div
-				ref={ref}
-				class="fixed bottom-0 left-0 right-0 w-full z-[100] flex border-t-2 p-1"
+				class="fixed bottom-0 left-0 right-0 w-full z-[100] flex border-t-2 p-1 items-center"
 				style={{
 					'background-color': secondaryBackground(),
 					'border-color': currentBackground(),
@@ -103,11 +101,9 @@ export const StatusBar: Component<StatusBarProps> = ({ ref }) => {
 				<h1
 					style={{
 						'font-family': LOGO_FONT_FAMILY,
-						'font-size': '16px',
+						'font-size': '18px',
 						'padding-inline': '4px',
-						'padding-block': '2px',
-						color: currentColor(),
-						'background-color': currentBackground()
+						color: currentColor()
 					}}
 				>
 					Fable
@@ -157,6 +153,6 @@ export const StatusBar: Component<StatusBarProps> = ({ ref }) => {
 					</For>
 				</ul>{' '}
 			</div>
-		</>
+		</Show>
 	)
 }

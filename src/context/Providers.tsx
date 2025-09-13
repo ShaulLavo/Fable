@@ -6,8 +6,8 @@ import { AppStateProvider } from './AppStateContext'
 import { FSProvider } from './FsContext'
 import { TerminalProvider } from './TerminalContext'
 import { FontProvider } from './FontContext'
-import { LlmProvider } from './LlmContext'
 import { ThemeProvider } from './ThemeContext'
+import { LlmProvider } from './LlmContext'
 
 // Single entry-point for all app providers + a coordinating reducer
 export function Providers(props: {
@@ -18,11 +18,11 @@ export function Providers(props: {
 		<AppStateProvider>
 			<FontProvider>
 				<ThemeProvider>
-					<FSProvider initialTree={props.initialFs ?? initialTree}>
-						<LlmProvider>
+					<LlmProvider>
+						<FSProvider initialTree={props.initialFs ?? initialTree}>
 							<TerminalProvider>{props.children}</TerminalProvider>
-						</LlmProvider>
-					</FSProvider>
+						</FSProvider>
+					</LlmProvider>
 				</ThemeProvider>
 			</FontProvider>
 		</AppStateProvider>

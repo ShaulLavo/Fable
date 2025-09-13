@@ -1,10 +1,11 @@
 import {
 	createDefaultMapFromCDN,
+	createSystem,
 	createVirtualTypeScriptEnvironment,
 	VirtualTypeScriptEnvironment
 } from '@typescript/vfs'
 import lzstring from 'lz-string'
-import ts from 'typescript'
+import ts, { sys } from 'typescript'
 import { createWorkerStorage } from './workerStorage'
 
 import { createWorker } from '@valtown/codemirror-ts/worker'
@@ -12,12 +13,10 @@ import * as Comlink from 'comlink'
 import { compilerOptions } from '../consts/typescript'
 import { OPFS } from '../service/OPFS.service'
 import type { Folder } from '../types/FS.types'
-import { createOPFSSystem } from './opfsSystem'
 
 let storage: Awaited<ReturnType<typeof createWorkerStorage>>
 let virtualTypeScriptEnvironment: VirtualTypeScriptEnvironment = null!
 let opfsSys: (ts.System & { opfsRelease?: (p: string) => void }) | null = null
-
 const worker = createWorker(async () => {
 	storage = await createWorkerStorage()
 	const fsMap = await createDefaultMapFromCDN(
@@ -30,35 +29,31 @@ const worker = createWorker(async () => {
 		storage
 	)
 
-	// Debug: confirm lib files are available (kept minimal)
+    // Preload the entire OPFS tree into the TS VFS alongside libs
 	try {
-		const libKeys = Array.from(fsMap.keys()).filter(k => k.includes('lib.'))
-		console.info('[TS Worker] lib files count:', libKeys.length)
-		console.info('[TS Worker] sample libs:', libKeys.slice(0, 5))
-	} catch {}
+		const root: Folder = { name: 'root', path: '', isOpen: true, children: [] }
+		const fullTree = await OPFS.tree(root)
+        const { files } = await OPFS.mapFiles(fullTree)
+        for (const [p, payload] of Object.entries(files)) {
+            if (typeof payload.code === 'string') {
+                fsMap.set(p, payload.code)
+            }
+        }
+        // Do not register project roots here; CM TS integration will open files as needed
+    } catch (e) {
+        // If OPFS is unavailable, proceed with libs only
+        console.warn('[TS Worker] OPFS preload failed:', e)
+    }
+	const system = createSystem(fsMap)
 
-	// Create an OPFS-backed System with the TypeScript lib files overlaid
-	const sys = await createOPFSSystem(fsMap)
-	opfsSys = sys
-	virtualTypeScriptEnvironment = createVirtualTypeScriptEnvironment(
-		sys,
-		[],
-		ts,
-		compilerOptions
-	)
+    virtualTypeScriptEnvironment = createVirtualTypeScriptEnvironment(
+        system,
+        [],
+        ts,
+        compilerOptions
+    )
 
 	return virtualTypeScriptEnvironment
 })
-Comlink.expose({
-	...worker,
-	...virtualTypeScriptEnvironment,
-	async reloadFromOPFS() {
-		if (!virtualTypeScriptEnvironment) return
-	},
-	async releaseOPFS(path: string) {
-		try {
-			opfsSys?.opfsRelease?.(path)
-		} catch {}
-	}
-})
+Comlink.expose(worker)
 self.postMessage('ready')

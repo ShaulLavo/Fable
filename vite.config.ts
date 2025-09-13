@@ -57,7 +57,7 @@ export default defineConfig({
 		include: ['buffer', 'process'],
 		esbuildOptions: {
 			// Ensure esbuild also injects the node stdlib shims during pre-bundling
-			inject: ['node-stdlib-browser/helpers/esbuild/shim']
+			// inject: ['node-stdlib-browser/helpers/esbuild/shim']
 		}
 	},
 	plugins: [
@@ -65,10 +65,9 @@ export default defineConfig({
 		solidPlugin(),
 		compileTime(),
 		proxy(),
-		fullReloadAlways,
+		// fullReloadAlways,
 		{
 			...inject({
-				// Use the module id string, not an imported object
 				global: ['node-stdlib-browser/helpers/esbuild/shim', 'global'],
 				process: ['node-stdlib-browser/helpers/esbuild/shim', 'process'],
 				Buffer: ['node-stdlib-browser/helpers/esbuild/shim', 'Buffer']

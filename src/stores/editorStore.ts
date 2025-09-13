@@ -28,6 +28,11 @@ export const removeEditorRef = (ref: HTMLDivElement) => {
 }
 
 export const editorStates: Record<string, EditorState> = {}
+// Remember vertical scrollTop per file path
+export const editorScrollPositions: Map<string, number> = new Map()
+// Remember selection ranges per file path (anchor/head)
+export type SelectionRange = { anchor: number; head: number }
+export const editorSelections: Map<string, SelectionRange[]> = new Map()
 
 export const [editorMounted, setEditorMounted] = createSignal(false)
 
@@ -51,6 +56,9 @@ export const [editorHight, setEditorHight] = createSignal(window.innerHeight)
 export const [isTsLoading, setIsTsLoading] = createSignal(false)
 export const [isGitLoading, setIsGitLoading] = createSignal(false)
 export const [isMiniMap, setIsMiniMap] = createSignal(true)
+
+// Global editor behavior flags
+export const [formatOnSave, setFormatOnSave] = createSignal(true)
 
 export let worker: TypeScriptWorker = null!
 export const isWorkerReady = () => workerState()

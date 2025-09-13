@@ -10,16 +10,16 @@ import { TerminalController } from './controller'
 type Props = { class?: string }
 
 export function Terminal(props: Props) {
-    const { fontFamilyWithFallback } = useFont()
-    const { xTermTheme, currentColor } = useTheme()
-    const {
-        setFitAddon,
-        setTerminal,
-        setTerminalContainer,
-        setTerminalController,
-        terminal,
-        terminalContainer
-    } = useTerminal()
+	const { fontFamilyWithFallback } = useFont()
+	const { xTermTheme, currentColor } = useTheme()
+	const {
+		setFitAddon,
+		setTerminal,
+		setTerminalContainer,
+		setTerminalController,
+		terminal,
+		terminalContainer
+	} = useTerminal()
 	onMount(async () => {
 		const term = new XTerm({
 			fontFamily: fontFamilyWithFallback(),
@@ -51,14 +51,10 @@ export function Terminal(props: Props) {
 	})
 
 	createEffect(() => {
-		try {
-			terminal() && (terminal()!.options.theme = xTermTheme())
-		} catch {}
+		terminal() && (terminal()!.options.theme = xTermTheme())
 	})
 	createEffect(() => {
-		try {
-			terminal() && (terminal()!.options.fontFamily = fontFamilyWithFallback())
-		} catch {}
+		terminal() && (terminal()!.options.fontFamily = fontFamilyWithFallback())
 	})
 
 	return (

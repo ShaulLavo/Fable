@@ -49,6 +49,7 @@ import { css } from '@codemirror/lang-css'
 import { html } from '@codemirror/lang-html'
 import { json } from '@codemirror/lang-json'
 import { python } from '@codemirror/lang-python'
+import { go as goLang } from '@codemirror/lang-go'
 
 //@ts-ignore no types :(
 import rainbowBrackets from 'rainbowbrackets'
@@ -83,6 +84,7 @@ export const useExtensions = (
 		isTs,
 		isJs,
 		isPython,
+		isGo,
 		isJSON,
 		isHtml,
 		isSystemPath,
@@ -170,6 +172,7 @@ export const useExtensions = (
 	)
 	createExtension(() => (isCSS() ? css() : []))
 	createExtension(() => (isPython() ? python() : []))
+	createExtension(() => (isGo() ? goLang() : []))
 	createExtension(() => (isJSON() && !isSystemPath() ? json() : []))
 	createExtension(() =>
 		isHtml()
@@ -250,7 +253,7 @@ export const useExtensions = (
 				fontSize: fontSize() + 'px'
 			},
 			'.cm-lineNumbers .cm-gutterElement': {
-				color: getTransparentColor(currentColor(), 0.8)
+				color: getTransparentColor(currentColor(), 0.4)
 			},
 			'.cm-activeLineGutter': {},
 			'.cm-gutterElement': {

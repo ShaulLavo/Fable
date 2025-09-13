@@ -10,7 +10,7 @@ export const useFileExtension = () => {
 	const isSystemPath = () => SYSTEM_PATHS.includes(filePath())
 
 
-	// TS or JS family, for enabling language features & worker sync
+    // TS or JS family, for enabling language features & worker sync
 	const isTs = () =>
 		['typescript', 'javascript'].includes(
 			extensionMap[currentExtension() as keyof typeof extensionMap]
@@ -23,8 +23,9 @@ export const useFileExtension = () => {
 	const isTypeScriptOnly = () =>
 		['ts', 'tsx', 'dts'].includes(currentExtension()!)
 
-	const isPython = () =>
-		extensionMap[currentExtension() as keyof typeof extensionMap] === 'python'
+    const isPython = () =>
+        extensionMap[currentExtension() as keyof typeof extensionMap] === 'python'
+    const isGo = () => currentExtension() === 'go'
 	const isCSS = () => ['css', 'scss', 'sass'].includes(currentExtension()!)
 	const isJSON = () =>
 		extensionMap[currentExtension() as keyof typeof extensionMap] === 'json'
@@ -40,16 +41,17 @@ export const useFileExtension = () => {
 		)
 	const prettierConfig = () => getConfigFromExt(currentExtension())
 
-	return {
-		isTs,
-		isJs,
-		isTypeScriptOnly,
-		isPython,
-		isJSON,
-		isHtml,
-		currentExtension,
-		prettierConfig,
-		isSystemPath,
+    return {
+        isTs,
+        isJs,
+        isTypeScriptOnly,
+        isPython,
+        isGo,
+        isJSON,
+        isHtml,
+        currentExtension,
+        prettierConfig,
+        isSystemPath,
 		isBinary,
 		isImage,
 		isCSS

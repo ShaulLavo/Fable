@@ -73,7 +73,8 @@ export const extensionMap = {
 	pyo: 'python',
 	pyw: 'python',
 	pyz: 'python',
-	pyx: 'python'
+    pyx: 'python',
+    go: 'go'
 } as const
 
 export const getConfigFromExt = (extension?: string) => {

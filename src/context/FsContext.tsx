@@ -17,6 +17,7 @@ import { createStore, produce } from 'solid-js/store'
 import { SYSTEM_PATHS } from '../consts/app'
 import { EMPTY_NODE_NAME } from '../consts/FS'
 import { LOCAL_STORAGE_CAP, STORAGE_KEYS } from '../consts/storage'
+import { useAppState } from '../context/AppStateContext'
 import { useCurrentFile } from '../hooks/useCurrentFile'
 import { useOPFS } from '../hooks/useOPFS'
 import {
@@ -26,7 +27,6 @@ import {
 	getParent,
 	sortTreeInDraft
 } from '../service/FS.service'
-import { useAppState } from '../context/AppStateContext'
 import { setBaseline } from '../stores/dirtyStore'
 import { editorMounted, setStart, start } from '../stores/editorStore'
 import { File, Folder, FSNode, isFolder } from '../types/FS.types'
@@ -66,9 +66,8 @@ const FSContext = createContext<FSContext>()
 // computed inside provider using useAppState()
 
 // isEmptyNode is computed within FSProvider where rootName is available
-export const isMock = false
 export const FSProvider: ParentComponent<{ initialTree?: Folder }> = props => {
-	const { rootName, setIsFsLoading } = useAppState()
+	const { rootName, setIsFsLoading, hasPaintedBus } = useAppState()
 	const EMPTY_ROOT = {
 		name: rootName(),
 		path: '',
@@ -105,10 +104,6 @@ export const FSProvider: ParentComponent<{ initialTree?: Folder }> = props => {
 		}
 	)
 	const OPFS = useOPFS()
-	const runWhenIdle = (cb: () => void) =>
-		'requestIdleCallback' in window
-			? window.requestIdleCallback(cb)
-			: setTimeout(cb, 0)
 	createEffect(
 		on(
 			editorMounted,
@@ -117,7 +112,8 @@ export const FSProvider: ParentComponent<{ initialTree?: Folder }> = props => {
 				try {
 					// OPFS is the source of truth
 					let tree = await new Promise<Folder>(resolve => {
-						runWhenIdle(async () => {
+						hasPaintedBus.listen(async p => {
+							if (!p) return
 							const t = await OPFS.tree(fs)
 							resolve(t)
 						})
@@ -169,7 +165,8 @@ export const FSProvider: ParentComponent<{ initialTree?: Folder }> = props => {
 					// })
 
 					tree = await new Promise<Folder>(resolve => {
-						runWhenIdle(async () => {
+						hasPaintedBus.listen(async p => {
+							if (!p) return
 							const t = await OPFS.tree(fs)
 							resolve(t)
 						})
@@ -199,33 +196,29 @@ export const FSProvider: ParentComponent<{ initialTree?: Folder }> = props => {
 			async mounted => {
 				if (!mounted) return
 
-				// Restore tabs and contents after idle to avoid blocking paint
-				await new Promise<void>(resolve => {
-					runWhenIdle(async () => {
-						let tabsFromStorage = localStorage.getItem(STORAGE_KEYS.TABS)
-						if (tabsFromStorage) {
-							tabsFromStorage = JSON.parse(tabsFromStorage)
-							if (Array.isArray(tabsFromStorage)) {
-								const results = await Promise.all(
-									tabsFromStorage.filter(Boolean).map(async (path: string) => {
-										const file = getNode(fs, path)
-										if (!file) return
-										const content = await OPFS.getFile(file)
-										return { path: file.path, content: content ?? '' }
-									})
-								)
+				let tabsFromStorage = localStorage.getItem(STORAGE_KEYS.TABS)
+				if (tabsFromStorage) {
+					tabsFromStorage = JSON.parse(tabsFromStorage)
+					if (Array.isArray(tabsFromStorage)) {
+						const results = await Promise.all(
+							tabsFromStorage.filter(Boolean).map(async (path: string) => {
+								const file = getNode(fs, path)
+								if (!file) return
+								const content = await OPFS.getFile(file)
+								return { path: file.path, content: content ?? '' }
+							})
+						)
 
-								results
-									.filter((p): p is { path: string; content: string } => !!p)
-									.forEach(({ path, content }) => {
-										openFiles.set(path, content)
-										setBaseline(path, content)
-									})
-							}
-						}
-						resolve()
-					})
-				})
+						results
+							.filter((p): p is { path: string; content: string } => !!p)
+							.forEach(({ path, content }) => {
+								openFiles.set(path, content)
+								console.log('setting baseline for', path, content)
+								setBaseline(path, content)
+							})
+					}
+				}
+
 				console.info(
 					`tab sync took ${(performance.now() - start()).toFixed(2)} ms`
 				)
@@ -275,9 +268,12 @@ export const FSProvider: ParentComponent<{ initialTree?: Folder }> = props => {
 		const content = localStorage.getItem(STORAGE_KEYS.LAST_KNOWN_FILE_CONTENT)
 		if (content) openFiles.set(file.path, content)
 	}
-	const currentFile = createMemo(() =>
-		!isFolder(currentNode()) ? currentNode() : lastKnownFile()
-	)
+	const currentFile = createMemo(() => {
+		if (currentNode() === fs) {
+			return null
+		}
+		return !isFolder(currentNode()) ? currentNode() : lastKnownFile()
+	})
 	const [currentFileSize, setCurrentFileSize] = createSignal(0)
 
 	const { currentFileContent } = useCurrentFile(currentFile, openFiles)

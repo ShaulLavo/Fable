@@ -7,23 +7,24 @@ import { File, Folder } from '../types/FS.types'
 import { getNode } from '../service/FS.service'
 import hotkeys from 'hotkeys-js'
 import { Accessor } from 'solid-js'
-import { themedToast } from './notify'
+import { themedToast, toastError } from './notify'
+import { formatOnSave } from '../stores/editorStore'
 import { isDirty, clearDirty, setBaseline } from '../stores/dirtyStore'
 
 export function registerGlobalHotkeys(actions: {
-  toggleSideBar: () => boolean
-  setIsSearchBar: (fn: (p: boolean) => boolean) => void
-  toggleTerminal: () => boolean
+	toggleSideBar: () => boolean
+	setIsSearchBar: (fn: (p: boolean) => boolean) => void
+	toggleTerminal: () => boolean
 }) {
-  hotkeys('ctrl+b,command+b', actions.toggleSideBar)
-  hotkeys('ctrl+p,command+p', e => {
-    e.preventDefault()
-    actions.setIsSearchBar(p => !p)
-  })
-  hotkeys('ctrl+j,command+j', e => {
-    e.preventDefault()
-    actions.toggleTerminal()
-  })
+	hotkeys('ctrl+b,command+b', actions.toggleSideBar)
+	hotkeys('ctrl+p,command+p', e => {
+		e.preventDefault()
+		actions.setIsSearchBar(p => !p)
+	})
+	hotkeys('ctrl+j,command+j', e => {
+		e.preventDefault()
+		actions.toggleTerminal()
+	})
 }
 // Editor-scoped Mod-J is added in createKeymap below
 // hotkeys('ctrl+p', toggleSideBar)
@@ -95,13 +96,12 @@ export function createKeymap(
 		{
 			key: 'Mod-s',
 			run: () => {
-				console.info('saving', filePath())
 				if (!fileMap.has(filePath()!)) {
 					console.error('no file')
 					return false
 				}
-				const currentCode = code()
-				if (currentCode == undefined) {
+				const current = code()
+				if (current == undefined) {
 					console.error('no code')
 					return false
 				}
@@ -111,18 +111,45 @@ export function createKeymap(
 					return false
 				}
 				const path = filePath()!
-				const hadChanges = isDirty(path)
-				Promise.resolve(saveFile(node as File, currentCode)).then(() => {
+				const doSave = async () => {
+					let content = current
+					if (formatOnSave()) {
+						const cfg = getConfigFromExt(currentExtension())
+						if (cfg) {
+							content = await formatCode({
+								code,
+								setCode: newCode => {
+									skipSync(true)
+									view().dispatch({
+										changes: {
+											from: 0,
+											to: code()?.length,
+											insert: newCode ?? ''
+										}
+									})
+								},
+								config: cfg,
+								cursorOffset: view().state.selection.main.head,
+								setCursor: offset => {
+									view().dispatch({ selection: { anchor: offset, head: offset } })
+								}
+							})
+						} else {
+							toastError('Format on save not supported for this file type')
+						}
+					}
+					const hadChanges = isDirty(path)
+					await saveFile(node as File, content)
 					if (hadChanges) {
 						themedToast(`Saved ${node.name}`)
 						clearDirty(path)
 					}
-					// Update baseline to the freshly saved content
-					setBaseline(path, currentCode)
-				})
+					setBaseline(path, content)
+				}
+				void doSave()
 				return true
 			},
-			preventDefault: true.valueOf,
+			preventDefault: true,
 			scope: 'editor'
 		},
 		{

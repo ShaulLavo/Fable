@@ -1,9 +1,18 @@
-import { EditorState } from '@codemirror/state'
+import { EditorSelection, EditorState } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import { Accessor, batch, createEffect, createSignal, onMount } from 'solid-js'
+import {
+	Accessor,
+	batch,
+	createEffect,
+	createSignal,
+	on,
+	onMount
+} from 'solid-js'
+import { ThemeKey, useTheme } from '../../context/ThemeContext'
 import {
 	editorRefs,
-	getPaintTimes,
+	editorScrollPositions,
+	editorSelections,
 	setCurrentColumn,
 	setCurrentLine,
 	setCurrentSelection,
@@ -11,18 +20,16 @@ import {
 	setStart,
 	start
 } from '../../stores/editorStore'
-import { historyField } from '@codemirror/commands'
-import { ThemeKey, useTheme } from '../../context/ThemeContext'
 import { setFormatter } from '../../utils/format'
 
+import { inlineSuggestion } from 'codemirror-extension-inline-suggestion'
+import { useAppState } from '../../context/AppStateContext'
 import { useFS } from '../../context/FsContext'
+import { useLlm } from '../../context/LlmContext'
+import { useTerminal } from '../../context/TerminalContext'
 import { useCurrentFile } from '../../hooks/useCurrentFile'
 import { useFileExtension } from '../../hooks/useFileExtension'
 import { useExtensions } from './useExtensions'
-import { inlineSuggestion } from 'codemirror-extension-inline-suggestion'
-import { useLlm } from '../../context/LlmContext'
-import { useTerminal } from '../../context/TerminalContext'
-import { useAppState } from '../../context/AppStateContext'
 
 export interface EditorProps {
 	defaultTheme?: ThemeKey
@@ -50,6 +57,10 @@ export const Editor = ({
 	const { isTs, isPython } = useFileExtension()
 
 	const [editorView, setView] = createSignal<EditorView>(null!)
+
+	// Track per-file scroll positions
+	let prevPath = ''
+	const currentPath = () => currentFile()?.path ?? ''
 
 	const baseExtensions = useExtensions(index, editorView)
 	const { setTheme } = useTheme()
@@ -91,6 +102,17 @@ export const Editor = ({
 					setCurrentLine(line.number)
 					setCurrentColumn(main.head - line.from)
 				})
+				// Persist selections for current file
+				try {
+					const path = currentPath()
+					if (path) {
+						const ranges = view.state.selection.ranges.map(r => ({
+							anchor: r.anchor,
+							head: r.head
+						}))
+						editorSelections.set(path, ranges)
+					}
+				} catch {}
 			}
 		})
 		const editorState = EditorState.create({
@@ -116,7 +138,61 @@ export const Editor = ({
 		setStart(performance.now())
 		return view
 	}
-	onMount(setupEditor)
+	onMount(() => {
+		const view = setupEditor()
+		// Try to restore selection and scroll for initial file
+		const path = currentPath()
+		const len = view.state.doc.length
+		const savedSel = editorSelections.get(path)
+		if (savedSel && savedSel.length) {
+			try {
+				const ranges = savedSel.map(r =>
+					EditorSelection.range(Math.min(r.anchor, len), Math.min(r.head, len))
+				)
+				view.dispatch({ selection: EditorSelection.create(ranges) })
+			} catch {}
+		}
+		const saved = editorScrollPositions.get(path) ?? 0
+		requestAnimationFrame(() => view.scrollDOM.scrollTo({ top: saved }))
+	})
+
+	// Save/restore scroll when switching files (tabs)
+	createEffect(
+		on(currentPath, path => {
+			const view = editorView()
+			if (!view) return
+			// Save previous file scroll top + selection
+			if (prevPath) {
+				try {
+					editorScrollPositions.set(prevPath, view.scrollDOM.scrollTop)
+					const ranges = view.state.selection.ranges.map(r => ({
+						anchor: r.anchor,
+						head: r.head
+					}))
+					editorSelections.set(prevPath, ranges)
+				} catch {}
+			}
+			prevPath = path
+			// Restore new file scroll top after doc update completes
+			queueMicrotask(() => {
+				try {
+					const len = view.state.doc.length
+					const sel = editorSelections.get(path)
+					if (sel && sel.length) {
+						const ranges = sel.map(r =>
+							EditorSelection.range(
+								Math.min(r.anchor, len),
+								Math.min(r.head, len)
+							)
+						)
+						view.dispatch({ selection: EditorSelection.create(ranges) })
+					}
+					const saved = editorScrollPositions.get(path) ?? 0
+					requestAnimationFrame(() => view.scrollDOM.scrollTo({ top: saved }))
+				} catch {}
+			})
+		})
+	)
 
 	createEffect(() => {
 		// TODO infer this

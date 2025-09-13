@@ -14,8 +14,7 @@ export const compilerOptions: ts.CompilerOptions = {
 	checkJs: false,
 	noEmit: true,
 	isolatedModules: true,
-	// Browser-oriented types; Solid's JSX types come via jsxImportSource
-	types: ['vite/client'],
+    // Keep default libs only; avoid external 'vite/client' which isn't available in VFS
 	lib: [
 		'ESNext',
 		'DOM',
